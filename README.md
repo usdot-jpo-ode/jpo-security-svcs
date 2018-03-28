@@ -6,7 +6,21 @@
 
 ## Run
 
+### Java JAR:
+
 `java -jar target/jpo-security-svcs-0.1.0.jar`
+
+### Docker:
+
+`docker build .`
+
+(Take note of image reported by docker build)
+
+`docker run -p 8080:8080 <image>`
+
+### Docker Compose:
+
+`docker-compose up --build`
 
 ## Test
 

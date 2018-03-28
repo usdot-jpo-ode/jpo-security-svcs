@@ -1,0 +1,6 @@
+version: '2'
+services:
+  jpo-security-svcs:
+    build: .
+    ports:
+      - "8080:8080"
