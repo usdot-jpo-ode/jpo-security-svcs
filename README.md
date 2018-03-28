@@ -10,8 +10,20 @@
 
 ## Test
 
-`curl -H "Content-Type: application/json" -X POST -d '{"message":"hello_world"}' http://localhost:8080/sign`
+Send a POST request to `localhost:8080/sign` with a body of the form:
+
+```
+{
+	"message": "<base64 encoded data>",
+	"ip": "192.168.1.1",
+	"port": "1234"
+}
+```
 
 Expected output:
 
-```{"message+signature":"hello_world_signature"}```
+```
+{
+   "message-signed": "<base64 encoded data + signature>"
+}
+```
