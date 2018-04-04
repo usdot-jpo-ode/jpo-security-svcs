@@ -1,6 +1,0 @@
-version: '2'
-services:
-  jpo-security-svcs:
-    build: .
-    ports:
-      - "8090:8090"
