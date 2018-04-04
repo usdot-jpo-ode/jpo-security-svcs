@@ -16,11 +16,7 @@
 
 (Take note of image reported by docker build)
 
-`docker run -p 8080:8080 <image>`
-
-### Docker Compose:
-
-`docker-compose up --build`
+`docker run -p 8090:8090 <image>`
 
 ## Test
 
@@ -28,9 +24,7 @@ Send a POST request to `localhost:8080/sign` with a body of the form:
 
 ```
 {
-	"message": "<base64 encoded data>",
-	"ip": "192.168.1.1",
-	"port": "1234"
+	"message": "<hex encoded data>"
 }
 ```
 
@@ -38,6 +32,21 @@ Expected output:
 
 ```
 {
-   "message-signed": "<base64 encoded data + signature>"
+	"result": "<hex encoded data + signature>"
 }
 ```
+
+## Configuration
+
+In `./src/main/resources/application.properties` there are 5 properties:
+
+| Property        | Meaning           | Default Value  |
+| ------------- |:-------------:| -----:|
+| server.port | The port to which messages should be sent | 8090 |
+| destIp | IP address of external signature service | (none) |
+| destPort | Destination port of external signature service | (none) |
+| mockResponse | If no real signing is desired, the service will return a mock message | true |
+| useHsm | If true, will use internal HSM signing routine. If false, will use external service | false |
+
+
+
