@@ -8,7 +8,7 @@
 
 ### Java JAR:
 
-`java -jar target/jpo-security-svcs-0.1.0.jar`
+`java -jar target/jpo-security-svcs-0.0.1-SNAPSHOT.jar`
 
 ### Docker:
 
