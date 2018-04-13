@@ -1,4 +1,4 @@
-package controllers;
+package us.dot.its.jpo.sec.controllers;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -9,14 +9,18 @@ import org.apache.tomcat.util.buf.HexUtils;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -29,8 +33,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @Configuration
 @PropertySource("classpath:application.properties")
 @RestController
-public class SignatureController {
-   
+public class SignatureController implements EnvironmentAware {
+
+   @Autowired
+   private Environment env;
+
 //   private static final String MOCK_MESSAGE = "03810040038081a3d34d45e80ef4db807dd35102f42db7e81d34d34d34d34d34d05efbe43f41d37d35100ef7138e760f5e77f7bd7a0bdf44f43e79e75d34d34dc5d00e7d074f34d35d37d3b17c000f7defd1780f7041dc0d00f76eba0b4d34d34d3ce781370760b8ef6f75176d44f39104134e7bf7cd34dbce36d02e45dbad7bd79e3617c14407c13cd7b0bcdc30ba17c044e35d84dfc0b9176d03ef50b8db5f34d34db4d770c30fbeba0b60018300019924e7b3b2720001992842024272810101000301801631afb5fc255d0f508208f49317071422d1925e6f5b00031acb5dbc8400a983010180034801010001838182792f4e20404c92bf0707999b338ef65e6d6f110bfbf1b67a360ed8a8e412bfa88083a83da9c99739b68f2eff338bbb4b9af2982fe50d843f0f896b9cf291e5d39d1417be0d856eaaea639de2f6ff2d42928e0e2374cbe1ac5dc0d065b0a36ecdfac6";
 
    @Value("${sec.cryptoServiceBaseUri}")
@@ -68,13 +75,28 @@ public class SignatureController {
          logger.info("Signing using HSM");
          response = signWithHsm(message);
       } else {
+         logger.debug("Before trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
+         //Remove all slashes from the end of the URI, if any
+         while (cryptoServiceBaseUri != null && cryptoServiceBaseUri.endsWith("/")) {
+            cryptoServiceBaseUri = cryptoServiceBaseUri.substring(0, cryptoServiceBaseUri.lastIndexOf('/'));
+         }
+
+         //Remove all slashes from the beginning of the path string, if any
+         while (cryptoServiceEndpointSignPath != null && cryptoServiceEndpointSignPath.startsWith("/")) {
+            cryptoServiceEndpointSignPath = cryptoServiceEndpointSignPath.substring(1);
+         }
+
+         logger.debug("After Trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
+
+         String hexString = message.msg;
+         if (!StringUtils.isEmpty(cryptoServiceBaseUri) && !StringUtils.isEmpty(cryptoServiceEndpointSignPath)) {
+            logger.info("Sending signature request to external service");
+            ResponseEntity<String> result = forwardMessageToExternalService(message);
+   
+            byte[] decoded = Base64.decodeBase64(result.getBody());
+            hexString = HexUtils.toHexString(decoded);
+         }
          
-         logger.error("Sending signature request to external service");
-         ResponseEntity<String> result = forwardMessageToExternalService(message);
-
-         byte[] decoded = Base64.decodeBase64(result.getBody());
-         String hexString = HexUtils.toHexString(decoded);
-
          response = ResponseEntity.status(HttpStatus.OK).body(Collections.singletonMap("result", hexString));
       }
 
@@ -91,25 +113,15 @@ public class SignatureController {
 
       RestTemplate template = new RestTemplate();
 
-      logger.info("Received request: {}", entity);
-
-      //Remove all slashes from the end of the URI, if any
-      while (cryptoServiceBaseUri != null && cryptoServiceBaseUri.endsWith("/")) {
-         cryptoServiceBaseUri = cryptoServiceBaseUri.substring(0, cryptoServiceBaseUri.lastIndexOf('/'));
-      }
-
-      //Remove all slashes from the beginning of the path string, if any
-      while (cryptoServiceEndpointSignPath != null && cryptoServiceEndpointSignPath.startsWith("/")) {
-         cryptoServiceEndpointSignPath = cryptoServiceEndpointSignPath.substring(1);
-      }
+      logger.debug("Received request: {}", entity);
 
       URI uri = new URI(cryptoServiceBaseUri + "/" + cryptoServiceEndpointSignPath);
       
-      logger.info("Sending request to: {}", uri);
+      logger.debug("Sending request to: {}", uri);
 
       ResponseEntity<String> respEntity = template.postForEntity(uri, entity, String.class);
 
-      logger.info("Received response: {}", respEntity);
+      logger.debug("Received response: {}", respEntity);
 
       return respEntity;
    }
@@ -117,6 +129,43 @@ public class SignatureController {
    private ResponseEntity<Map<String, String>> signWithHsm(Message message) {
       return ResponseEntity.status(HttpStatus.OK).body(
          Collections.singletonMap("result", message + "NOT IMPLEMENTED"));
+   }
+
+   @Override
+   public void setEnvironment(Environment env) {
+      this.env = env;
+   }
+
+   public Environment getEnv() {
+      return env;
+   }
+
+   public void setEnv(Environment env) {
+      this.env = env;
+   }
+
+   public String getCryptoServiceBaseUri() {
+      return cryptoServiceBaseUri;
+   }
+
+   public void setCryptoServiceBaseUri(String cryptoServiceBaseUri) {
+      this.cryptoServiceBaseUri = cryptoServiceBaseUri;
+   }
+
+   public String getCryptoServiceEndpointSignPath() {
+      return cryptoServiceEndpointSignPath;
+   }
+
+   public void setCryptoServiceEndpointSignPath(String cryptoServiceEndpointSignPath) {
+      this.cryptoServiceEndpointSignPath = cryptoServiceEndpointSignPath;
+   }
+
+   public boolean isUseHsm() {
+      return useHsm;
+   }
+
+   public void setUseHsm(boolean useHsm) {
+      this.useHsm = useHsm;
    }
 
 }
