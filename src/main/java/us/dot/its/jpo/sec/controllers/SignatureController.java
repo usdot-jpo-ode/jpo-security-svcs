@@ -5,8 +5,7 @@ import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Map;
 
-import org.apache.tomcat.util.buf.HexUtils;
-import org.apache.tomcat.util.codec.binary.Base64;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,16 +84,17 @@ public class SignatureController implements EnvironmentAware {
 
          logger.debug("After Trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
 
-         String hexString = message.msg;
+         String resultString = message.msg;
          if (!StringUtils.isEmpty(cryptoServiceBaseUri) && !StringUtils.isEmpty(cryptoServiceEndpointSignPath)) {
             logger.info("Sending signature request to external service");
             ResponseEntity<String> result = forwardMessageToExternalService(message);
    
-            byte[] decoded = Base64.decodeBase64(result.getBody());
-            hexString = HexUtils.toHexString(decoded);
+            JSONObject json = new JSONObject(result.getBody());
+            
+            resultString = json.getString("message-signed");
          }
          
-         response = ResponseEntity.status(HttpStatus.OK).body(Collections.singletonMap("result", hexString));
+         response = ResponseEntity.status(HttpStatus.OK).body(Collections.singletonMap("result", resultString));
       }
 
       return response;
