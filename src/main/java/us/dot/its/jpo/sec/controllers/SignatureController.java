@@ -10,7 +10,7 @@ import org.apache.tomcat.util.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
@@ -31,6 +31,7 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Configuration
+@ConfigurationProperties("sec")
 @PropertySource("classpath:application.properties")
 @RestController
 public class SignatureController implements EnvironmentAware {
@@ -40,13 +41,9 @@ public class SignatureController implements EnvironmentAware {
 
 //   private static final String MOCK_MESSAGE = "03810040038081a3d34d45e80ef4db807dd35102f42db7e81d34d34d34d34d34d05efbe43f41d37d35100ef7138e760f5e77f7bd7a0bdf44f43e79e75d34d34dc5d00e7d074f34d35d37d3b17c000f7defd1780f7041dc0d00f76eba0b4d34d34d3ce781370760b8ef6f75176d44f39104134e7bf7cd34dbce36d02e45dbad7bd79e3617c14407c13cd7b0bcdc30ba17c044e35d84dfc0b9176d03ef50b8db5f34d34db4d770c30fbeba0b60018300019924e7b3b2720001992842024272810101000301801631afb5fc255d0f508208f49317071422d1925e6f5b00031acb5dbc8400a983010180034801010001838182792f4e20404c92bf0707999b338ef65e6d6f110bfbf1b67a360ed8a8e412bfa88083a83da9c99739b68f2eff338bbb4b9af2982fe50d843f0f896b9cf291e5d39d1417be0d856eaaea639de2f6ff2d42928e0e2374cbe1ac5dc0d065b0a36ecdfac6";
 
-   @Value("${sec.cryptoServiceBaseUri}")
    public String cryptoServiceBaseUri;
-   @Value("${sec.cryptoServiceEndpointSignPath}")
    private String cryptoServiceEndpointSignPath;
-//   @Value("${sec.mockResponse}")
 //   public boolean mockResponse;
-   @Value("${sec.useHsm}")
    public boolean useHsm;
 
    public static class Message {
