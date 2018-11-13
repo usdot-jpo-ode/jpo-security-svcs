@@ -3,6 +3,7 @@ package us.dot.its.jpo.sec.controllers;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.json.JSONObject;
@@ -58,7 +59,7 @@ public class SignatureController implements EnvironmentAware {
 
       logger.info("Received message: {}", message.msg);
 
-      ResponseEntity<Map<String,String>> response = null;
+      ResponseEntity<Map<String,String>> response;
       
 //      logger.info("mockResponse == {}", mockResponse);
 //
@@ -92,9 +93,18 @@ public class SignatureController implements EnvironmentAware {
             JSONObject json = new JSONObject(result.getBody());
             
             resultString = json.getString("message-signed");
+            response = ResponseEntity.status(HttpStatus.OK).body(Collections.singletonMap("result", resultString));
+         } else {
+            String msg = "Properties sec.cryptoServiceBaseUri=" + cryptoServiceBaseUri
+                  + ", sec.cryptoServiceEndpointSignPath=" + cryptoServiceEndpointSignPath
+                  + " Not defined. Returning the message unchanged.";
+            logger.warn(msg);
+            Map<String, String> result = new HashMap<String, String>();
+            result.put("result", resultString);
+            result.put("warn", msg);
+            response = ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
          }
          
-         response = ResponseEntity.status(HttpStatus.OK).body(Collections.singletonMap("result", resultString));
       }
 
       return response;
