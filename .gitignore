@@ -4,3 +4,4 @@
 .classpath
 /*.log
 /bin
+/*.factorypath
