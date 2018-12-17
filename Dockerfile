@@ -10,6 +10,6 @@ RUN mvn clean package
 FROM openjdk:8u171-jre-alpine
 
 COPY --from=builder /home/src/main/resources/logback.xml /home
-COPY --from=builder /home/target/jpo-security-svcs-0.0.1-SNAPSHOT.jar /home
+COPY --from=builder /home/target/jpo-security-svcs.jar /home
 
-CMD ["java", "-Dlogback.configurationFile=/home/logback.xml", "-jar", "/home/jpo-security-svcs-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-Dlogback.configurationFile=/home/logback.xml", "-jar", "/home/jpo-security-svcs.jar"]

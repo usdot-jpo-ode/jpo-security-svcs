@@ -13,7 +13,7 @@
 
 	<groupId>usdot.jpo.ode</groupId>
 	<artifactId>jpo-security-svcs</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 
 	<packaging>jar</packaging>
 	<name>jpo-security-svcs</name>
@@ -63,6 +63,7 @@
 
 
 	<build>
+    <finalName>${project.artifactId}</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
