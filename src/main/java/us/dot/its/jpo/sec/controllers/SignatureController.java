@@ -112,7 +112,11 @@ public class SignatureController implements EnvironmentAware {
             JSONObject json = new JSONObject(result.getBody());
             
             resultString = json.getString("message-signed");
-            response = ResponseEntity.status(HttpStatus.OK).body(Collections.singletonMap("result", resultString));
+            String resultMsgExpiry = json.getString("message-expiry");
+            Map<String, String> mapResult = new HashMap<>();
+				mapResult.put("message-expiry", resultMsgExpiry);
+				mapResult.put("message-signed", resultString);
+            response = ResponseEntity.status(HttpStatus.OK).body(Collections.singletonMap("result", new JSONObject(mapResult).toString()));
          } else {
             String msg = "Properties sec.cryptoServiceBaseUri=" + cryptoServiceBaseUri
                   + ", sec.cryptoServiceEndpointSignPath=" + cryptoServiceEndpointSignPath
