@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * Copyright 2018 572682
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License.  You may obtain a copy
+ * of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ ******************************************************************************/
 package us.dot.its.jpo.sec.controllers;
 
 import java.net.URI;
@@ -46,9 +61,12 @@ public class SignatureController implements EnvironmentAware {
 //   public boolean mockResponse;
    public boolean useHsm;
 
-   public static class Message {
+   public static class Message{
       @JsonProperty("message")
       public String msg;
+      
+      @JsonProperty("sigValidityOverride")
+      public int sigValidityOverride = 0;
    }
 
    private static final Logger logger = LoggerFactory.getLogger(SignatureController.class);
@@ -58,6 +76,7 @@ public class SignatureController implements EnvironmentAware {
    public ResponseEntity<Map<String,String>> sign(@RequestBody Message message) throws URISyntaxException {
 
       logger.info("Received message: {}", message.msg);
+      logger.info("Received sigValidityOverride: {}", message.sigValidityOverride);
 
       ResponseEntity<Map<String,String>> response;
       
@@ -84,7 +103,7 @@ public class SignatureController implements EnvironmentAware {
          }
 
          logger.debug("After Trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
-
+       
          String resultString = message.msg;
          if (!StringUtils.isEmpty(cryptoServiceBaseUri) && !StringUtils.isEmpty(cryptoServiceEndpointSignPath)) {
             logger.info("Sending signature request to external service");
@@ -93,7 +112,11 @@ public class SignatureController implements EnvironmentAware {
             JSONObject json = new JSONObject(result.getBody());
             
             resultString = json.getString("message-signed");
-            response = ResponseEntity.status(HttpStatus.OK).body(Collections.singletonMap("result", resultString));
+            String resultMsgExpiry = json.getString("message-expiry");
+            Map<String, String> mapResult = new HashMap<>();
+				mapResult.put("message-expiry", resultMsgExpiry);
+				mapResult.put("message-signed", resultString);
+            response = ResponseEntity.status(HttpStatus.OK).body(Collections.singletonMap("result", new JSONObject(mapResult).toString()));
          } else {
             String msg = "Properties sec.cryptoServiceBaseUri=" + cryptoServiceBaseUri
                   + ", sec.cryptoServiceEndpointSignPath=" + cryptoServiceEndpointSignPath
@@ -105,6 +128,7 @@ public class SignatureController implements EnvironmentAware {
             response = ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
          }
          
+         
       }
 
       return response;
@@ -115,9 +139,19 @@ public class SignatureController implements EnvironmentAware {
 
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_JSON);
-
-      HttpEntity<Map<String, String>> entity = new HttpEntity<>(Collections.singletonMap("message", message.msg), headers);
-
+      Map<String,String> map;
+      
+      if(message.sigValidityOverride > 0) 
+      {
+    	  map = new HashMap<>();
+    	  map.put("message",message.msg);
+    	  map.put("sigValidityOverride", Integer.toString(message.sigValidityOverride));
+      }
+      else 
+      {
+    	 map = Collections.singletonMap("message", message.msg); 
+      }     
+      HttpEntity<Map<String, String>> entity = new HttpEntity<>(map, headers); 
       RestTemplate template = new RestTemplate();
 
       logger.debug("Received request: {}", entity);
