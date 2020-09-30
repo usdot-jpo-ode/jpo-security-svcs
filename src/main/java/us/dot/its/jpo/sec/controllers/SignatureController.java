@@ -61,9 +61,12 @@ public class SignatureController implements EnvironmentAware {
 //   public boolean mockResponse;
    public boolean useHsm;
 
-   public static class Message {
+   public static class Message{
       @JsonProperty("message")
       public String msg;
+      
+      @JsonProperty("sigValidityOverride")
+      public int sigValidityOverride = 0;
    }
 
    private static final Logger logger = LoggerFactory.getLogger(SignatureController.class);
@@ -73,6 +76,7 @@ public class SignatureController implements EnvironmentAware {
    public ResponseEntity<Map<String,String>> sign(@RequestBody Message message) throws URISyntaxException {
 
       logger.info("Received message: {}", message.msg);
+      logger.info("Received sigValidityOverride: {}", message.sigValidityOverride);
 
       ResponseEntity<Map<String,String>> response;
       
@@ -99,7 +103,7 @@ public class SignatureController implements EnvironmentAware {
          }
 
          logger.debug("After Trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
-
+       
          String resultString = message.msg;
          if (!StringUtils.isEmpty(cryptoServiceBaseUri) && !StringUtils.isEmpty(cryptoServiceEndpointSignPath)) {
             logger.info("Sending signature request to external service");
@@ -108,7 +112,19 @@ public class SignatureController implements EnvironmentAware {
             JSONObject json = new JSONObject(result.getBody());
             
             resultString = json.getString("message-signed");
-            response = ResponseEntity.status(HttpStatus.OK).body(Collections.singletonMap("result", resultString));
+            Map<String, String> mapResult = new HashMap<>();
+            try 
+            {
+            
+               mapResult.put("message-expiry", String.valueOf(json.getLong("message-expiry")));
+               
+            }
+            catch(Exception e)
+            {
+               mapResult.put("message-expiry", "null");
+            }
+				mapResult.put("message-signed", resultString);
+            response = ResponseEntity.status(HttpStatus.OK).body(Collections.singletonMap("result", new JSONObject(mapResult).toString()));
          } else {
             String msg = "Properties sec.cryptoServiceBaseUri=" + cryptoServiceBaseUri
                   + ", sec.cryptoServiceEndpointSignPath=" + cryptoServiceEndpointSignPath
@@ -120,6 +136,7 @@ public class SignatureController implements EnvironmentAware {
             response = ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
          }
          
+         
       }
 
       return response;
@@ -130,9 +147,19 @@ public class SignatureController implements EnvironmentAware {
 
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_JSON);
-
-      HttpEntity<Map<String, String>> entity = new HttpEntity<>(Collections.singletonMap("message", message.msg), headers);
-
+      Map<String,String> map;
+      
+      if(message.sigValidityOverride > 0) 
+      {
+    	  map = new HashMap<>();
+    	  map.put("message",message.msg);
+    	  map.put("sigValidityOverride", Integer.toString(message.sigValidityOverride));
+      }
+      else 
+      {
+    	 map = Collections.singletonMap("message", message.msg); 
+      }     
+      HttpEntity<Map<String, String>> entity = new HttpEntity<>(map, headers); 
       RestTemplate template = new RestTemplate();
 
       logger.debug("Received request: {}", entity);
