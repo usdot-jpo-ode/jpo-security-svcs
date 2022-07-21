@@ -15,6 +15,8 @@
  ******************************************************************************/
 package us.dot.its.jpo.sec.controllers;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -210,7 +212,7 @@ public class SignatureController implements EnvironmentAware {
    }
 
    private KeyStore readStore() throws Exception {
-      try (InputStream keyStoreStream = this.getClass().getResourceAsStream(keyStorePath)) {
+      try (InputStream keyStoreStream = new FileInputStream(new File(keyStorePath))) {
          KeyStore keyStore = KeyStore.getInstance("JKS");
          keyStore.load(keyStoreStream, keyStorePassword.toCharArray());
          return keyStore;
