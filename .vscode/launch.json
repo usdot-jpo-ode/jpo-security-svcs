@@ -9,7 +9,8 @@
             "name": "Launch Application",
             "request": "launch",
             "mainClass": "us.dot.its.jpo.sec.Application",
-            "projectName": "jpo-security-svcs"
+            "projectName": "jpo-security-svcs",
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }
