@@ -15,12 +15,24 @@
  ******************************************************************************/
 package us.dot.its.jpo.sec.controllers;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.KeyStore;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.net.ssl.SSLContext;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContexts;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,17 +66,18 @@ public class SignatureController implements EnvironmentAware {
    @Autowired
    private Environment env;
 
-//   private static final String MOCK_MESSAGE = "03810040038081a3d34d45e80ef4db807dd35102f42db7e81d34d34d34d34d34d05efbe43f41d37d35100ef7138e760f5e77f7bd7a0bdf44f43e79e75d34d34dc5d00e7d074f34d35d37d3b17c000f7defd1780f7041dc0d00f76eba0b4d34d34d3ce781370760b8ef6f75176d44f39104134e7bf7cd34dbce36d02e45dbad7bd79e3617c14407c13cd7b0bcdc30ba17c044e35d84dfc0b9176d03ef50b8db5f34d34db4d770c30fbeba0b60018300019924e7b3b2720001992842024272810101000301801631afb5fc255d0f508208f49317071422d1925e6f5b00031acb5dbc8400a983010180034801010001838182792f4e20404c92bf0707999b338ef65e6d6f110bfbf1b67a360ed8a8e412bfa88083a83da9c99739b68f2eff338bbb4b9af2982fe50d843f0f896b9cf291e5d39d1417be0d856eaaea639de2f6ff2d42928e0e2374cbe1ac5dc0d065b0a36ecdfac6";
-
    public String cryptoServiceBaseUri;
    private String cryptoServiceEndpointSignPath;
-//   public boolean mockResponse;
    public boolean useHsm;
 
-   public static class Message{
+   private boolean useCertficates;
+   private String keyStorePath;
+   private String keyStorePassword;
+
+   public static class Message {
       @JsonProperty("message")
       public String msg;
-      
+
       @JsonProperty("sigValidityOverride")
       public int sigValidityOverride = 0;
    }
@@ -73,58 +86,54 @@ public class SignatureController implements EnvironmentAware {
 
    @RequestMapping(value = "/sign", method = RequestMethod.POST, produces = "application/json")
    @ResponseBody
-   public ResponseEntity<Map<String,String>> sign(@RequestBody Message message) throws URISyntaxException {
+   public ResponseEntity<Map<String, String>> sign(@RequestBody Message message) throws URISyntaxException {
 
       logger.info("Received message: {}", message.msg);
       logger.info("Received sigValidityOverride: {}", message.sigValidityOverride);
 
-      ResponseEntity<Map<String,String>> response;
-      
-//      logger.info("mockResponse == {}", mockResponse);
-//
-//      if (mockResponse) {
-//         logger.info("Returning mock response");
-//         response = ResponseEntity.status(HttpStatus.OK).body(
-//            Collections.singletonMap("result", MOCK_MESSAGE));
-//      } else if (useHsm) {
+      ResponseEntity<Map<String, String>> response;
+
       if (useHsm) {
          logger.info("Signing using HSM");
          response = signWithHsm(message);
       } else {
-         logger.debug("Before trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
-         //Remove all slashes from the end of the URI, if any
+         logger.debug("Before trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}",
+               cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
+         // Remove all slashes from the end of the URI, if any
          while (cryptoServiceBaseUri != null && cryptoServiceBaseUri.endsWith("/")) {
             cryptoServiceBaseUri = cryptoServiceBaseUri.substring(0, cryptoServiceBaseUri.lastIndexOf('/'));
          }
 
-         //Remove all slashes from the beginning of the path string, if any
+         // Remove all slashes from the beginning of the path string, if any
          while (cryptoServiceEndpointSignPath != null && cryptoServiceEndpointSignPath.startsWith("/")) {
             cryptoServiceEndpointSignPath = cryptoServiceEndpointSignPath.substring(1);
          }
 
-         logger.debug("After Trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
-       
+         logger.debug("After Trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri,
+               cryptoServiceEndpointSignPath);
+
          String resultString = message.msg;
          if (!StringUtils.isEmpty(cryptoServiceBaseUri) && !StringUtils.isEmpty(cryptoServiceEndpointSignPath)) {
             logger.info("Sending signature request to external service");
-            ResponseEntity<String> result = forwardMessageToExternalService(message);
-   
-            JSONObject json = new JSONObject(result.getBody());
-            
-            resultString = json.getString("message-signed");
-            Map<String, String> mapResult = new HashMap<>();
-            try 
-            {
-            
-               mapResult.put("message-expiry", String.valueOf(json.getLong("message-expiry")));
-               
+            JSONObject json = forwardMessageToExternalService(message);
+
+            if (json != null) {
+               resultString = json.getString("message-signed");
+               Map<String, String> mapResult = new HashMap<>();
+               try {
+
+                  mapResult.put("message-expiry", String.valueOf(json.getLong("message-expiry")));
+
+               } catch (Exception e) {
+                  mapResult.put("message-expiry", "null");
+               }
+               mapResult.put("message-signed", resultString);
+               response = ResponseEntity.status(HttpStatus.OK)
+                     .body(Collections.singletonMap("result", new JSONObject(mapResult).toString()));
+            } else {
+               response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                     .body(Collections.singletonMap("error", "Error communicating with external service"));
             }
-            catch(Exception e)
-            {
-               mapResult.put("message-expiry", "null");
-            }
-				mapResult.put("message-signed", resultString);
-            response = ResponseEntity.status(HttpStatus.OK).body(Collections.singletonMap("result", new JSONObject(mapResult).toString()));
          } else {
             String msg = "Properties sec.cryptoServiceBaseUri=" + cryptoServiceBaseUri
                   + ", sec.cryptoServiceEndpointSignPath=" + cryptoServiceEndpointSignPath
@@ -135,49 +144,86 @@ public class SignatureController implements EnvironmentAware {
             result.put("warn", msg);
             response = ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
          }
-         
-         
+
       }
 
       return response;
 
    }
 
-   private ResponseEntity<String> forwardMessageToExternalService(Message message) throws URISyntaxException {
+   private JSONObject forwardMessageToExternalService(Message message) throws URISyntaxException {
 
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_JSON);
-      Map<String,String> map;
-      
-      if(message.sigValidityOverride > 0) 
-      {
-    	  map = new HashMap<>();
-    	  map.put("message",message.msg);
-    	  map.put("sigValidityOverride", Integer.toString(message.sigValidityOverride));
+      Map<String, String> map;
+
+      if (message.sigValidityOverride > 0) {
+         map = new HashMap<>();
+         map.put("message", message.msg);
+         map.put("sigValidityOverride", Integer.toString(message.sigValidityOverride));
+      } else {
+         map = Collections.singletonMap("message", message.msg);
       }
-      else 
-      {
-    	 map = Collections.singletonMap("message", message.msg); 
-      }     
-      HttpEntity<Map<String, String>> entity = new HttpEntity<>(map, headers); 
+      HttpEntity<Map<String, String>> entity = new HttpEntity<>(map, headers);
       RestTemplate template = new RestTemplate();
 
       logger.debug("Received request: {}", entity);
 
       URI uri = new URI(cryptoServiceBaseUri + "/" + cryptoServiceEndpointSignPath);
-      
+
       logger.debug("Sending request to: {}", uri);
 
-      ResponseEntity<String> respEntity = template.postForEntity(uri, entity, String.class);
+      if (useCertficates) {
+         try {
+            SSLContext sslContext = SSLContexts.custom()
+                  .loadKeyMaterial(readStore(), keyStorePassword.toCharArray())
+                  .build();
 
-      logger.debug("Received response: {}", respEntity);
+            HttpClient httpClient = HttpClients.custom()
+                  .setSSLContext(sslContext)
+                  .build();
 
-      return respEntity;
+            HttpPost httpPost = new HttpPost(uri);
+            httpPost.setHeader("Content-Type", "application/json");
+            org.apache.http.HttpEntity entity2 = new org.apache.http.entity.StringEntity(
+                  new JSONObject(map).toString());
+            httpPost.setEntity(entity2);
+
+            HttpResponse response = httpClient
+                  .execute(httpPost);
+            org.apache.http.HttpEntity apache_entity = response.getEntity();
+            String result = EntityUtils.toString(apache_entity);
+            logger.debug("Returned signature object: {}", result);
+            JSONObject jObj = new JSONObject(result);
+            EntityUtils.consume(apache_entity);
+            return jObj;
+
+         } catch (Exception e) {
+            logger.error("Error creating SSLContext", e);
+            return null;
+         }
+      } else {
+
+         ResponseEntity<String> respEntity = template.postForEntity(uri, entity, String.class);
+         logger.debug("Received response: {}", respEntity);
+
+         return new JSONObject(respEntity.getBody());
+      }
+   }
+
+   private KeyStore readStore() throws Exception {
+      try (InputStream keyStoreStream = new FileInputStream(new File(keyStorePath))) {
+         KeyStore keyStore = KeyStore.getInstance("JKS");
+         keyStore.load(keyStoreStream, keyStorePassword.toCharArray());
+         return keyStore;
+      } catch (Exception e) {
+         throw new Exception("Error reading keystore", e);
+      }
    }
 
    private ResponseEntity<Map<String, String>> signWithHsm(Message message) {
       return ResponseEntity.status(HttpStatus.OK).body(
-         Collections.singletonMap("result", message + "NOT IMPLEMENTED"));
+            Collections.singletonMap("result", message + "NOT IMPLEMENTED"));
    }
 
    @Override
@@ -217,4 +263,27 @@ public class SignatureController implements EnvironmentAware {
       this.useHsm = useHsm;
    }
 
+   public boolean isUseCertficates() {
+      return useCertficates;
+   }
+
+   public void setUseCertficates(boolean useCertficates) {
+      this.useCertficates = useCertficates;
+   }
+
+   public String getKeyStorePath() {
+      return keyStorePath;
+   }
+
+   public void setKeyStorePath(String keyStorePath) {
+      this.keyStorePath = keyStorePath;
+   }
+
+   public String getKeyStorePassword() {
+      return keyStorePassword;
+   }
+
+   public void setKeyStorePassword(String keyStorePassword) {
+      this.keyStorePassword = keyStorePassword;
+   }
 }
