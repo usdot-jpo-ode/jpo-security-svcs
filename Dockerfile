@@ -1,5 +1,4 @@
 FROM maven:3.5.4-jdk-8-alpine as builder
-MAINTAINER 583114@bah.com
 
 WORKDIR /home
 COPY ./pom.xml .
