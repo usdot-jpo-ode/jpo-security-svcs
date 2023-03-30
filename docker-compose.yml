@@ -11,11 +11,13 @@ services:
       SEC_CRYPTO_SERVICE_BASE_URI: ${SEC_CRYPTO_SERVICE_BASE_URI}
       SEC_CRYPTO_SERVICE_ENDPOINT_SIGN_PATH: ${SEC_CRYPTO_SERVICE_ENDPOINT_SIGN_PATH}
       SEC_USE_CERTFICATES: ${SEC_USE_CERTFICATES}
-      SEC_KEY_STORE_PATH: ${SEC_KEY_STORE_PATH}
+      #SEC_KEY_STORE_PATH: ${SEC_KEY_STORE_PATH}
       SEC_KEY_STORE_PASSWORD: ${SEC_KEY_STORE_PASSWORD}
     volumes: 
-      - ./src/main/resources/creds:/home/creds
-    command: sh -c "cp -a /home/creds/caCerts/. /usr/local/share/ca-certificates/ && update-ca-certificates && java -Dlogback.configurationFile=/home/logback.xml -jar /home/jpo-security-svcs.jar"
+      - ./src/main/resources/creds:/usr/local/share/ca-certificates
+      - ./src/main/resources/cert.jks:/home/cert.jks
+      - ./src/main/resources/logback.xml:/home/logback.xml
+    command: sh -c "update-ca-certificates && java -Dlogback.configurationFile=/home/logback.xml -jar /home/jpo-security-svcs.jar"
     logging:
       options:
         max-size: "10m"  
