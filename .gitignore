@@ -6,3 +6,7 @@
 /bin
 /*.factorypath
 /*.versionsBackup
+**.jks
+**.pem
+.env
+**.crt
