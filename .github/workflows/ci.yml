@@ -20,11 +20,11 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: "11"
+          java-version: "1.8"
           distribution: "temurin"
       - name: Run Sonar
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           ls -la && pwd
-          mvn -e -X clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar -Dsonar.projectKey=usdot-jpo-ode_jpo-security-svcs -Dsonar.projectName=jpo-security-svcs -Dsonar.organization=usdot-jpo-ode-1 -Dsonar.host.url=https://sonarcloud.io -Dsonar.branch.name=$GITHUB_REF_NAM
+          mvn -e -X clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar -Dsonar.modules=jpo-security-svcs -Dsonar.projectKey=usdot-jpo-ode_jpo-security-svcs -Dsonar.projectName=jpo-security-svcs -Dsonar.organization=usdot-jpo-ode-1 -Dsonar.host.url=https://sonarcloud.io -Dsonar.branch.name=$GITHUB_REF_NAM
