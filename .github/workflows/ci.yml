@@ -54,7 +54,7 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
       - name: Build and analyze
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Pcoverage
+        run: mvn -e -X clean org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Pcoverage -Dsonar.branch.name=$GITHUB_REF_NAM
         env:
           # SonarCloud access token should be generated from https://sonarcloud.io/account/security/
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
