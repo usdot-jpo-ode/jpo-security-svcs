@@ -11,50 +11,21 @@ jobs:
       - name: Build
         uses: docker/build-push-action@v3
 
-  #sonar:
-    #runs-on: ubuntu-latest
-    #steps:
-      #- uses: actions/checkout@v3
-        #with:
-          #submodules: recursive
-      #- name: Set up JDK
-        #uses: actions/setup-java@v3
-        #with:
-          #java-version: "11"
-          #distribution: "temurin"
-      #- name: Run Sonar
-        #env:
-          #SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        #run: |
-          #ls -la && pwd
-          #mvn -e -X clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar -Dsonar.projectKey=usdot-jpo-ode_jpo-security-svcs -Dsonar.source=. -Dsonar.projectKey=usdot-jpo-ode_jpo-security-svcs -Dsonar.projectName=jpo-security-svcs -Dsonar.organization=usdot-jpo-ode-1 -Dsonar.host.url=https://sonarcloud.io -Dsonar.branch.name=$GITHUB_REF_NAM
-
   sonar:
-    name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
-          # Shallow clones should be disabled for a better relevancy of analysis
-          fetch-depth: 0
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
+          submodules: recursive
+      - name: Set up JDK
+        uses: actions/setup-java@v3
         with:
-          java-version: 11
-      - name: Cache Maven packages
-        uses: actions/cache@v1
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v1
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-      - name: Build and analyze
-        run: mvn -e -X clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar -Pcoverage -Dsonar.projectName=jpo-security-svcs -Dsonar.branch.name=$GITHUB_REF_NAM
+          java-version: "11"
+          distribution: "temurin"
+      - name: Run Sonar
         env:
-          # SonarCloud access token should be generated from https://sonarcloud.io/account/security/
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn test
+          mvn -e -X clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar -Dsonar.projectKey=usdot-jpo-ode_jpo-security-svcs -Dsonar.source=. -Dsonar.projectKey=usdot-jpo-ode_jpo-security-svcs -Dsonar.projectName=jpo-security-svcs -Dsonar.organization=usdot-jpo-ode-1 -Dsonar.host.url=https://sonarcloud.io -Dsonar.branch.name=$GITHUB_REF_NAM
+
