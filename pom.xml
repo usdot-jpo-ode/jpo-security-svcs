@@ -17,17 +17,17 @@
 	<name>jpo-security-svcs</name>
 	<description>JPO ODE Cryptography Module</description>
 	<properties>
-		      <java.version>1.8</java.version>
-		      <jmockit.version>1.49</jmockit.version>
-		      <argLine>-javaagent:${user.home}/.m2/repository/org/jmockit/jmockit/${jmockit.version}/jmockit-${jmockit.version}.jar</argLine>
-		      <sonar.organization>usdot-jpo-ode-1</sonar.organization>
-          <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-          <!-- JaCoCo Properties -->
-          <jacoco.version>0.8.8</jacoco.version>
-          <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-          <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-          <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-          <sonar.language>java</sonar.language>
+		    <java.version>1.8</java.version>
+		    <jmockit.version>1.49</jmockit.version>
+		    <argLine>-javaagent:${user.home}/.m2/repository/org/jmockit/jmockit/${jmockit.version}/jmockit-${jmockit.version}.jar</argLine>
+		    <sonar.organization>usdot-jpo-ode-1</sonar.organization>
+            <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+            <!-- JaCoCo Properties -->
+            <jacoco.version>0.8.8</jacoco.version>
+            <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+            <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+            <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+            <sonar.language>java</sonar.language>
 	</properties>
 
 
