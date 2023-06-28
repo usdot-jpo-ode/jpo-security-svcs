@@ -44,7 +44,7 @@ jobs:
      - run: |
          cd $GITHUB_WORKSPACE/tmca-tester
          npm install --force
-         npm run build --if-present      
+         npm run build    
          node ./tmca-tester.js  
   sonar:
     needs: [jpo-security-svcs, tmca-tester]
