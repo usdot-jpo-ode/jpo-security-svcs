@@ -1,6 +1,21 @@
 Jpo-security-svcs Release Notes
 ----------------------------
 
+Version 1.2.0, released July 5th 2023
+----------------------------------------
+
+### **Summary**
+The updates for jpo-security-svcs 1.2.0 involve CI/CD additions & an updated json version.
+
+Enhancements in this release:
+- Added CI/CD for Docker Build & Sonar Cloud.
+
+Fixes in this release:
+- Bumped json from 20180130 to 20230227
+
+Known Issues
+- There are no known issues at this time.
+
 Version 1.1.0, released Mar 30th 2023
 ----------------------------------------
 
