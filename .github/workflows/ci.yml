@@ -74,7 +74,7 @@ jobs:
           sonar.java.binaries=home/runner/work/jpo-security-svcs/jpo-security-svcs/target
           sonar.projectBaseDir=$GITHUB_WORKSPACE
           sonar.projectKey=usdot-jpo-ode_jpo-security-svcs
-          sonar.organization=usdot-jpo-ode-1
+          sonar.organization=usdot-jpo-ode
           jpo-security-svcs.sonar.projectBaseDir  = home/runner/work/jpo-security-svcs/jpo-security-svcs
           jpo-security-svcs.sonar.sources         = src
           tmca-tester.sonar.projectBaseDir=$GITHUB_WORKSPACE /tmca-tester
