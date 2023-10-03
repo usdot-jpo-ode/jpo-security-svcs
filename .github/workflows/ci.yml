@@ -73,6 +73,7 @@ jobs:
           sonar.coverage.jacoco.xmlReportPaths=$GITHUB_WORKSPACE/tmca-tester/target/site/jacoco/jacoco.xml
           sonar.java.binaries=home/runner/work/jpo-security-svcs/jpo-security-svcs/target
           sonar.projectBaseDir=$GITHUB_WORKSPACE
+          <sonar.organization>usdot-jpo-ode</sonar.organization>
           sonar.projectKey=usdot-jpo-ode_jpo-security-svcs
           jpo-security-svcs.sonar.projectBaseDir  = home/runner/work/jpo-security-svcs/jpo-security-svcs
           jpo-security-svcs.sonar.sources         = src

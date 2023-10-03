@@ -20,7 +20,6 @@
 		    <java.version>1.8</java.version>
 		    <jmockit.version>1.49</jmockit.version>
 		    <argLine>-javaagent:${user.home}/.m2/repository/org/jmockit/jmockit/${jmockit.version}/jmockit-${jmockit.version}.jar</argLine>
-		    <sonar.organization>usdot-jpo-ode</sonar.organization>
             <sonar.host.url>https://sonarcloud.io</sonar.host.url>
             <!-- JaCoCo Properties -->
             <jacoco.version>0.8.8</jacoco.version>
