@@ -1,4 +1,4 @@
-FROM maven:3.5.4-jdk-8-alpine as builder
+FROM maven:3.8-eclipse-temurin-21-alpine as builder
 
 WORKDIR /home
 COPY ./pom.xml .
@@ -6,7 +6,7 @@ COPY ./src ./src
 
 RUN mvn clean package
 
-FROM eclipse-temurin:11-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 RUN apk update
 RUN apk add ca-certificates
