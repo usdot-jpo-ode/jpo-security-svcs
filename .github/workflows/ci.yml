@@ -1,0 +1,88 @@
+name: CI
+on: 
+  pull_request:
+  push:
+    
+jobs:
+  jpo-security-svcs:
+   runs-on: ubuntu-latest
+   container:
+     image: maven:3.8-eclipse-temurin-21-alpine
+     options: --user root
+   steps:
+     - name: Checkout ${{ github.event.repository.name }}
+       uses: actions/checkout@v3    
+     - name: Set up Maven
+       uses: stCarolas/setup-maven@v4.5
+       with:
+        maven-version: 3.8.2          
+     - uses: actions/setup-java@v3
+       with:
+         java-version: '21'
+         distribution: 'temurin'               
+     - name: Build
+       run: |
+         cd $GITHUB_WORKSPACE
+         ls -ls && pwd
+         mvn -e -X clean org.jacoco:jacoco-maven-plugin:prepare-agent package
+         mvn -e -X clean org.jacoco:jacoco-maven-plugin:report package
+     - name: Archive code coverage results
+       uses: actions/upload-artifact@v3
+       with:
+         name: jpo-security-svcs
+         path: /__w/jpo-security-svcs/jpo-security-svcs/target 
+         if-no-files-found: error
+  tmca-tester:
+   runs-on: ubuntu-latest
+   steps:  
+     - name: Checkout ${{ github.event.repository.name }}
+       uses: actions/checkout@v3
+     - name: build tmca-tester
+       uses: actions/setup-node@v3
+       with:
+         node-version: '18.x'
+     - run: |
+         cd $GITHUB_WORKSPACE/tmca-tester
+         npm install --force
+         node ./tmca-tester.js  
+  sonar:
+    needs: [jpo-security-svcs, tmca-tester]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0   
+      - name: Download code coverage results
+        uses: actions/download-artifact@v3
+        with:
+          name: jpo-security-svcs
+          path: home/runner/work/jpo-security-svcs/jpo-security-svcs/target     
+      - name: Find jacoco.xml
+        shell: bash
+        run: |
+          find "$GITHUB_WORKSPACE" -name "jacoco.xml"                
+      - name: Setup SonarScanner
+        uses: warchant/setup-sonar-scanner@v4
+        with:
+          version: 4.8.0.2856
+      - name: Generate sonar properties file
+        run: |
+          cat <<EOF > /tmp/sonar-scanner.properties
+          sonar.host.url=https://sonarcloud.io
+          sonar.coverage.jacoco.xmlReportPaths=$GITHUB_WORKSPACE/tmca-tester/target/site/jacoco/jacoco.xml
+          sonar.java.binaries=home/runner/work/jpo-security-svcs/jpo-security-svcs/target
+          sonar.projectBaseDir=$GITHUB_WORKSPACE
+          sonar.projectKey=usdot-jpo-ode_jpo-security-svcs
+          sonar.organization=usdot-jpo-ode-1
+          jpo-security-svcs.sonar.projectBaseDir  = home/runner/work/jpo-security-svcs/jpo-security-svcs
+          jpo-security-svcs.sonar.sources         = src
+          tmca-tester.sonar.projectBaseDir=$GITHUB_WORKSPACE /tmca-tester
+          tmca-tester.sonar.sources=.
+          EOF
+      - name: Run SonarScanner
+        uses: usdot-fhwa-stol/actions/sonar-scanner@main
+        with:
+          sonar-properties-path: /tmp/sonar-scanner.properties
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+          working-dir: $GITHUB_WORKSPACE                 
