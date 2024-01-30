@@ -1,6 +1,18 @@
 Jpo-security-svcs Release Notes
 ----------------------------
 
+Version 1.3.0, released November 2023
+----------------------------------------
+### **Summary**
+No changes in this release.
+
+Enhancements in this release:
+- There are no enhancements in this release.
+
+Known Issues
+- There are no known issues at this time.
+
+
 Version 1.2.0, released July 5th 2023
 ----------------------------------------
 
