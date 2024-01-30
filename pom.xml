@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.4.1.RELEASE</version>
+		<version>3.1.3</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 
@@ -17,7 +17,7 @@
 	<name>jpo-security-svcs</name>
 	<description>JPO ODE Cryptography Module</description>
 	<properties>
-		    <java.version>1.8</java.version>
+		    <java.version>21</java.version>
 		    <jmockit.version>1.49</jmockit.version>
 		    <argLine>-javaagent:${user.home}/.m2/repository/org/jmockit/jmockit/${jmockit.version}/jmockit-${jmockit.version}.jar</argLine>
 		    <sonar.organization>usdot-jpo-ode-1</sonar.organization>
@@ -40,27 +40,27 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jmockit</groupId>
 			<artifactId>jmockit</artifactId>
-			<version>1.31</version>
+			<version>${jmockit.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
+			<version>4.13.2</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
+			<version>20231013</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -73,36 +73,19 @@
             <version>4.5.13</version>
         </dependency>
 		<dependency>
-			<groupId>javax.xml.bind</groupId>
-			<artifactId>jaxb-api</artifactId>
-			<version>2.3.1</version>
-      </dependency>
-      <dependency>
-         <groupId>org.jmockit</groupId>
-         <artifactId>jmockit</artifactId>
-         <version>${jmockit.version}</version>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>junit</groupId>
-         <artifactId>junit</artifactId>
-         <version>4.13.2</version>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.apache.kafka</groupId>
-         <artifactId>kafka_2.11</artifactId>
-         <version>2.4.1</version>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-mail</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.projectreactor</groupId>
-         <artifactId>reactor-spring</artifactId>
-         <version>1.0.1.RELEASE</version>
-      </dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka_2.11</artifactId>
+			<version>2.4.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.projectreactor</groupId>
+			<artifactId>reactor-spring</artifactId>
+			<version>1.0.1.RELEASE</version>
+		</dependency>
 	</dependencies>
 
 	<build>
