@@ -7,7 +7,7 @@ jobs:
   jpo-security-svcs:
    runs-on: ubuntu-latest
    container:
-     image: maven:3.8-eclipse-temurin-21-alpine
+     image: openjdk:21-jdk-slim-buster
      options: --user root
    steps:
      - name: Checkout ${{ github.event.repository.name }}
