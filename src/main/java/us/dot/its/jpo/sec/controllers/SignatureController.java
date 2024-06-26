@@ -87,7 +87,6 @@ public class SignatureController implements EnvironmentAware {
    @RequestMapping(value = "/sign", method = RequestMethod.POST, produces = "application/json")
    @ResponseBody
    public ResponseEntity<Map<String, String>> sign(@RequestBody Message message) throws URISyntaxException {
-
       logger.info("Received message: {}", message.msg);
       logger.info("Received sigValidityOverride: {}", message.sigValidityOverride);
 
@@ -97,20 +96,7 @@ public class SignatureController implements EnvironmentAware {
          logger.info("Signing using HSM");
          response = signWithHsm(message);
       } else {
-         logger.debug("Before trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}",
-               cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
-         // Remove all slashes from the end of the URI, if any
-         while (cryptoServiceBaseUri != null && cryptoServiceBaseUri.endsWith("/")) {
-            cryptoServiceBaseUri = cryptoServiceBaseUri.substring(0, cryptoServiceBaseUri.lastIndexOf('/'));
-         }
-
-         // Remove all slashes from the beginning of the path string, if any
-         while (cryptoServiceEndpointSignPath != null && cryptoServiceEndpointSignPath.startsWith("/")) {
-            cryptoServiceEndpointSignPath = cryptoServiceEndpointSignPath.substring(1);
-         }
-
-         logger.debug("After Trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri,
-               cryptoServiceEndpointSignPath);
+         trimBaseUriAndEndpointPath();
 
          String resultString = message.msg;
          if (!StringUtils.isEmpty(cryptoServiceBaseUri) && !StringUtils.isEmpty(cryptoServiceEndpointSignPath)) {
@@ -149,6 +135,19 @@ public class SignatureController implements EnvironmentAware {
 
       return response;
 
+   }
+
+   public void trimBaseUriAndEndpointPath() {
+      logger.debug("Before trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
+      // Remove all slashes from the end of the URI, if any
+      while (cryptoServiceBaseUri != null && cryptoServiceBaseUri.endsWith("/")) {
+         cryptoServiceBaseUri = cryptoServiceBaseUri.substring(0, cryptoServiceBaseUri.lastIndexOf('/'));
+      }
+      // Remove all slashes from the beginning of the path string, if any
+      while (cryptoServiceEndpointSignPath != null && cryptoServiceEndpointSignPath.startsWith("/")) {
+         cryptoServiceEndpointSignPath = cryptoServiceEndpointSignPath.substring(1);
+      }
+      logger.debug("After Trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
    }
 
    private JSONObject forwardMessageToExternalService(Message message) throws URISyntaxException {
