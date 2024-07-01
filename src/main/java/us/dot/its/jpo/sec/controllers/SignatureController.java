@@ -117,10 +117,12 @@ public class SignatureController implements EnvironmentAware {
                response = ResponseEntity.status(HttpStatus.OK)
                      .body(Collections.singletonMap("result", new JSONObject(mapResult).toString()));
             } else {
+               // no response from external service
                response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                      .body(Collections.singletonMap("error", "Error communicating with external service"));
             }
          } else {
+            // base URI or endpoint path not set, return the message unchanged
             String msg = "Properties sec.cryptoServiceBaseUri=" + cryptoServiceBaseUri
                   + ", sec.cryptoServiceEndpointSignPath=" + cryptoServiceEndpointSignPath
                   + " Not defined. Returning the message unchanged.";
@@ -222,7 +224,7 @@ public class SignatureController implements EnvironmentAware {
 
    private ResponseEntity<Map<String, String>> signWithHsm(Message message) {
       return ResponseEntity.status(HttpStatus.OK).body(
-            Collections.singletonMap("result", message + "NOT IMPLEMENTED"));
+            Collections.singletonMap("result", message.msg + "NOT IMPLEMENTED"));
    }
 
    @Override

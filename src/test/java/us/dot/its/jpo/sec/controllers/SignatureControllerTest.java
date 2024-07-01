@@ -2,12 +2,18 @@ package us.dot.its.jpo.sec.controllers;
 
 import static org.junit.Assert.assertEquals;
 
+import java.net.URISyntaxException;
+import java.util.Map;
+
+import org.json.JSONException;
 import org.junit.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.core.env.Environment;
+import org.springframework.http.ResponseEntity;
 
 import mockit.Injectable;
 import mockit.Tested;
+import us.dot.its.jpo.sec.controllers.SignatureController.Message;
 
 public class SignatureControllerTest {
     @Tested
@@ -19,6 +25,22 @@ public class SignatureControllerTest {
     @BeforeEach
     public void setUp() {
         testSignatureController = new SignatureController();
+    }
+
+    @Test
+    public void testSign_useHsm() throws URISyntaxException, JSONException {
+        // prepare
+        setUp();
+        testSignatureController.setUseHsm(true);
+        Message message = new Message();
+        message.msg = "test message";     
+
+        // execute
+        ResponseEntity<Map<String, String>> response = testSignatureController.sign(message);
+
+        // verify
+        assertEquals(1, response.getBody().size());
+        assertEquals("test messageNOT IMPLEMENTED", response.getBody().get("result"));
     }
 
     @Test
@@ -56,4 +78,5 @@ public class SignatureControllerTest {
         // verify
         assertEquals(expected, testSignatureController.getCryptoServiceBaseUri() + "/" + testSignatureController.getCryptoServiceEndpointSignPath());
     }
+
 }
