@@ -49,7 +49,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -86,7 +85,7 @@ public class SignatureController implements EnvironmentAware {
       trimBaseUriAndEndpointPath();
 
       String resultString = message.getMsg();
-      if (StringUtils.isEmpty(cryptoServiceBaseUri) || StringUtils.isEmpty(cryptoServiceEndpointSignPath)) {
+      if ((cryptoServiceBaseUri == null || cryptoServiceBaseUri.length() == 0) || (cryptoServiceEndpointSignPath == null || cryptoServiceEndpointSignPath.length() == 0)) {
          // base URI or endpoint path not set, return the message unchanged
          String msg = "Properties sec.cryptoServiceBaseUri=" + cryptoServiceBaseUri
                + ", sec.cryptoServiceEndpointSignPath=" + cryptoServiceEndpointSignPath
