@@ -84,47 +84,41 @@ public class SignatureController implements EnvironmentAware {
 
       ResponseEntity<Map<String, String>> response;
 
-      if (useHsm) {
-         logger.info("Signing using HSM");
-         response = signWithHsm(message);
-      } else {
-         trimBaseUriAndEndpointPath();
+      trimBaseUriAndEndpointPath();
 
-         String resultString = message.getMsg();
-         if (!StringUtils.isEmpty(cryptoServiceBaseUri) && !StringUtils.isEmpty(cryptoServiceEndpointSignPath)) {
-            logger.info("Sending signature request to external service");
-            JSONObject json = forwardMessageToExternalService(message);
+      String resultString = message.getMsg();
+      if (!StringUtils.isEmpty(cryptoServiceBaseUri) && !StringUtils.isEmpty(cryptoServiceEndpointSignPath)) {
+         logger.info("Sending signature request to external service");
+         JSONObject json = forwardMessageToExternalService(message);
 
-            if (json != null) {
-               resultString = json.getString("message-signed");
-               Map<String, String> mapResult = new HashMap<>();
-               try {
+         if (json != null) {
+            resultString = json.getString("message-signed");
+            Map<String, String> mapResult = new HashMap<>();
+            try {
 
-                  mapResult.put("message-expiry", String.valueOf(json.getLong("message-expiry")));
+               mapResult.put("message-expiry", String.valueOf(json.getLong("message-expiry")));
 
-               } catch (Exception e) {
-                  mapResult.put("message-expiry", "null");
-               }
-               mapResult.put("message-signed", resultString);
-               response = ResponseEntity.status(HttpStatus.OK)
-                     .body(Collections.singletonMap("result", new JSONObject(mapResult).toString()));
-            } else {
-               // no response from external service
-               response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                     .body(Collections.singletonMap("error", "Error communicating with external service"));
+            } catch (Exception e) {
+               mapResult.put("message-expiry", "null");
             }
+            mapResult.put("message-signed", resultString);
+            response = ResponseEntity.status(HttpStatus.OK)
+                  .body(Collections.singletonMap("result", new JSONObject(mapResult).toString()));
          } else {
-            // base URI or endpoint path not set, return the message unchanged
-            String msg = "Properties sec.cryptoServiceBaseUri=" + cryptoServiceBaseUri
-                  + ", sec.cryptoServiceEndpointSignPath=" + cryptoServiceEndpointSignPath
-                  + " Not defined. Returning the message unchanged.";
-            logger.warn(msg);
-            Map<String, String> result = new HashMap<String, String>();
-            result.put("result", resultString);
-            result.put("warn", msg);
-            response = ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
+            // no response from external service
+            response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                  .body(Collections.singletonMap("error", "Error communicating with external service"));
          }
-
+      } else {
+         // base URI or endpoint path not set, return the message unchanged
+         String msg = "Properties sec.cryptoServiceBaseUri=" + cryptoServiceBaseUri
+               + ", sec.cryptoServiceEndpointSignPath=" + cryptoServiceEndpointSignPath
+               + " Not defined. Returning the message unchanged.";
+         logger.warn(msg);
+         Map<String, String> result = new HashMap<String, String>();
+         result.put("result", resultString);
+         result.put("warn", msg);
+         response = ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
       }
 
       return response;
@@ -212,11 +206,6 @@ public class SignatureController implements EnvironmentAware {
       } catch (Exception e) {
          throw new Exception("Error reading keystore", e);
       }
-   }
-
-   private ResponseEntity<Map<String, String>> signWithHsm(Message message) {
-      return ResponseEntity.status(HttpStatus.OK).body(
-            Collections.singletonMap("result", message.getMsg() + "NOT IMPLEMENTED"));
    }
 
    @Override
