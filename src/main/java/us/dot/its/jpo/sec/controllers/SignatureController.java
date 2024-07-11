@@ -15,6 +15,8 @@
  ******************************************************************************/
 package us.dot.its.jpo.sec.controllers;
 
+import us.dot.its.jpo.sec.models.Message;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -55,8 +57,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 @Configuration
 @ConfigurationProperties("sec")
 @PropertySource("classpath:application.properties")
@@ -74,21 +74,13 @@ public class SignatureController implements EnvironmentAware {
    private String keyStorePath;
    private String keyStorePassword;
 
-   public static class Message {
-      @JsonProperty("message")
-      public String msg;
-
-      @JsonProperty("sigValidityOverride")
-      public int sigValidityOverride = 0;
-   }
-
    private static final Logger logger = LoggerFactory.getLogger(SignatureController.class);
 
    @RequestMapping(value = "/sign", method = RequestMethod.POST, produces = "application/json")
    @ResponseBody
    public ResponseEntity<Map<String, String>> sign(@RequestBody Message message) throws URISyntaxException {
-      logger.info("Received message: {}", message.msg);
-      logger.info("Received sigValidityOverride: {}", message.sigValidityOverride);
+      logger.info("Received message: {}", message.getMsg());
+      logger.info("Received sigValidityOverride: {}", message.getSigValidityOverride());
 
       ResponseEntity<Map<String, String>> response;
 
@@ -98,7 +90,7 @@ public class SignatureController implements EnvironmentAware {
       } else {
          trimBaseUriAndEndpointPath();
 
-         String resultString = message.msg;
+         String resultString = message.getMsg();
          if (!StringUtils.isEmpty(cryptoServiceBaseUri) && !StringUtils.isEmpty(cryptoServiceEndpointSignPath)) {
             logger.info("Sending signature request to external service");
             JSONObject json = forwardMessageToExternalService(message);
@@ -158,12 +150,12 @@ public class SignatureController implements EnvironmentAware {
       headers.setContentType(MediaType.APPLICATION_JSON);
       Map<String, String> map;
 
-      if (message.sigValidityOverride > 0) {
+      if (message.getSigValidityOverride() > 0) {
          map = new HashMap<>();
-         map.put("message", message.msg);
-         map.put("sigValidityOverride", Integer.toString(message.sigValidityOverride));
+         map.put("message", message.getMsg());
+         map.put("sigValidityOverride", Integer.toString(message.getSigValidityOverride()));
       } else {
-         map = Collections.singletonMap("message", message.msg);
+         map = Collections.singletonMap("message", message.getMsg());
       }
       HttpEntity<Map<String, String>> entity = new HttpEntity<>(map, headers);
       RestTemplate template = new RestTemplate();
@@ -224,7 +216,7 @@ public class SignatureController implements EnvironmentAware {
 
    private ResponseEntity<Map<String, String>> signWithHsm(Message message) {
       return ResponseEntity.status(HttpStatus.OK).body(
-            Collections.singletonMap("result", message.msg + "NOT IMPLEMENTED"));
+            Collections.singletonMap("result", message.getMsg() + "NOT IMPLEMENTED"));
    }
 
    @Override

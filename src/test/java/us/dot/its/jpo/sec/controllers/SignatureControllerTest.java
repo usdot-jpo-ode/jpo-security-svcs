@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 
 import mockit.Injectable;
 import mockit.Tested;
-import us.dot.its.jpo.sec.controllers.SignatureController.Message;
+import us.dot.its.jpo.sec.models.Message;
 
 public class SignatureControllerTest {
     @Tested
@@ -33,7 +33,7 @@ public class SignatureControllerTest {
         setUp();
         testSignatureController.setUseHsm(true);
         Message message = new Message();
-        message.msg = "test message";     
+        message.setMsg("test message");    
 
         // execute
         ResponseEntity<Map<String, String>> response = testSignatureController.sign(message);
