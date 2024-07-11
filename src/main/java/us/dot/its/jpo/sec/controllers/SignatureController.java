@@ -68,9 +68,8 @@ public class SignatureController implements EnvironmentAware {
 
    public String cryptoServiceBaseUri;
    private String cryptoServiceEndpointSignPath;
-   public boolean useHsm;
 
-   private boolean useCertficates;
+   private boolean useCertificates;
    private String keyStorePath;
    private String keyStorePassword;
 
@@ -126,7 +125,7 @@ public class SignatureController implements EnvironmentAware {
 
    }
 
-   public void trimBaseUriAndEndpointPath() {
+   protected void trimBaseUriAndEndpointPath() {
       logger.debug("Before trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
       // Remove all slashes from the end of the URI, if any
       while (cryptoServiceBaseUri != null && cryptoServiceBaseUri.endsWith("/")) {
@@ -139,7 +138,7 @@ public class SignatureController implements EnvironmentAware {
       logger.debug("After Trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
    }
 
-   private JSONObject forwardMessageToExternalService(Message message) throws URISyntaxException {
+   protected JSONObject forwardMessageToExternalService(Message message) throws URISyntaxException {
 
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_JSON);
@@ -161,7 +160,7 @@ public class SignatureController implements EnvironmentAware {
 
       logger.debug("Sending request to: {}", uri);
 
-      if (useCertficates) {
+      if (useCertificates) {
          try {
             SSLContext sslContext = SSLContexts.custom()
                   .loadKeyMaterial(readStore(), keyStorePassword.toCharArray())
@@ -199,7 +198,7 @@ public class SignatureController implements EnvironmentAware {
       }
    }
 
-   private KeyStore readStore() throws Exception {
+   protected KeyStore readStore() throws Exception {
       try (InputStream keyStoreStream = new FileInputStream(new File(keyStorePath))) {
          KeyStore keyStore = KeyStore.getInstance("JKS");
          keyStore.load(keyStoreStream, keyStorePassword.toCharArray());
@@ -238,20 +237,12 @@ public class SignatureController implements EnvironmentAware {
       this.cryptoServiceEndpointSignPath = cryptoServiceEndpointSignPath;
    }
 
-   public boolean isUseHsm() {
-      return useHsm;
+   public boolean isUseCertificates() {
+      return useCertificates;
    }
 
-   public void setUseHsm(boolean useHsm) {
-      this.useHsm = useHsm;
-   }
-
-   public boolean isUseCertficates() {
-      return useCertficates;
-   }
-
-   public void setUseCertficates(boolean useCertficates) {
-      this.useCertficates = useCertficates;
+   public void setUseCertificates(boolean useCertficates) {
+      this.useCertificates = useCertficates;
    }
 
    public String getKeyStorePath() {
