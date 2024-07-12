@@ -250,8 +250,8 @@ public class SignatureController implements EnvironmentAware {
       return useCertificates;
    }
 
-   public void setUseCertificates(boolean useCertficates) {
-      this.useCertificates = useCertficates;
+   public void setUseCertificates(boolean useCertificates) {
+      this.useCertificates = useCertificates;
    }
 
    public String getKeyStorePath() {

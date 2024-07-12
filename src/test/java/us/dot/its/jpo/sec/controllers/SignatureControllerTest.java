@@ -1,8 +1,10 @@
 package us.dot.its.jpo.sec.controllers;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
@@ -204,19 +206,22 @@ public class SignatureControllerTest {
         assertEquals("test", response.get("result"));
     }
 
-    // @Test
-    // public void testForwardMessageToExternalService_useCertificates_True_ERROR() {
-    //     // TODO: implement
-    // }
+    @Test
+    public void testForwardMessageToExternalService_useCertificates_True_ERROR() throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, URISyntaxException {
+        // prepare
+        setUp();
+        uut.setUseCertificates(true);
+        uut.setCryptoServiceBaseUri("http://example.com/");
+        uut.setCryptoServiceEndpointSignPath("endpoint");
+        doThrow(new KeyManagementException()).when(mockSSLContextFactory).getSSLContext(any(), any());
+        Message message = new Message();
+        message.setMsg("test");
 
-    // @Test
-    // public void testReadStore_SUCCESS() {
-    //     // TODO: implement
-    // }
+        // execute
+        JSONObject response = uut.forwardMessageToExternalService(message);
 
-    // @Test
-    // public void testReadStore_ERROR() {
-    //     // TODO: implement
-    // }
+        // verify
+        assertNull(response);
+    }
 
 }
