@@ -15,12 +15,13 @@
  ******************************************************************************/
 package us.dot.its.jpo.sec.controllers;
 
+import us.dot.its.jpo.sec.helpers.HttpClientFactory;
+import us.dot.its.jpo.sec.helpers.HttpEntityStringifier;
+import us.dot.its.jpo.sec.helpers.KeyStoreReader;
 import us.dot.its.jpo.sec.helpers.RestTemplateFactory;
+import us.dot.its.jpo.sec.helpers.SSLContextFactory;
 import us.dot.its.jpo.sec.models.Message;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyStore;
@@ -33,8 +34,6 @@ import javax.net.ssl.SSLContext;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -69,6 +68,18 @@ public class SignatureController implements EnvironmentAware {
    @Autowired
    private RestTemplateFactory restTemplateFactory;
 
+   @Autowired
+   private KeyStoreReader keyStoreReader;
+
+   @Autowired
+   private SSLContextFactory sslContextFactory;
+
+   @Autowired
+   private HttpClientFactory httpClientFactory;
+
+   @Autowired
+   private HttpEntityStringifier httpEntityStringifier;
+
    public String cryptoServiceBaseUri;
    private String cryptoServiceEndpointSignPath;
 
@@ -79,9 +90,14 @@ public class SignatureController implements EnvironmentAware {
    private static final Logger logger = LoggerFactory.getLogger(SignatureController.class);
 
    @Autowired
-   public void injectBaseDependencies(Environment env, RestTemplateFactory restTemplateFactory) {
+   public void injectBaseDependencies(Environment env, RestTemplateFactory restTemplateFactory, KeyStoreReader keyStoreReader, 
+         SSLContextFactory sslContextFactory, HttpClientFactory httpClientFactory, HttpEntityStringifier httpEntityStringifier) {
       this.env = env;
       this.restTemplateFactory = restTemplateFactory;
+      this.keyStoreReader = keyStoreReader;
+      this.sslContextFactory = sslContextFactory;
+      this.httpClientFactory = httpClientFactory;
+      this.httpEntityStringifier = httpEntityStringifier;
    }
 
    @RequestMapping(value = "/sign", method = RequestMethod.POST, produces = "application/json")
@@ -171,24 +187,18 @@ public class SignatureController implements EnvironmentAware {
 
       if (useCertificates) {
          try {
-            SSLContext sslContext = SSLContexts.custom()
-                  .loadKeyMaterial(readStore(), keyStorePassword.toCharArray())
-                  .build();
-
-            HttpClient httpClient = HttpClients.custom()
-                  .setSSLContext(sslContext)
-                  .build();
+            KeyStore keyStore = keyStoreReader.readStore(keyStorePath, keyStorePassword);
+            SSLContext sslContext = sslContextFactory.getSSLContext(keyStore, keyStorePassword);
+            HttpClient httpClient = httpClientFactory.getHttpClient(sslContext);
 
             HttpPost httpPost = new HttpPost(uri);
             httpPost.setHeader("Content-Type", "application/json");
-            org.apache.http.HttpEntity entity2 = new org.apache.http.entity.StringEntity(
-                  new JSONObject(map).toString());
+            org.apache.http.HttpEntity entity2 = new org.apache.http.entity.StringEntity(new JSONObject(map).toString());
             httpPost.setEntity(entity2);
 
-            HttpResponse response = httpClient
-                  .execute(httpPost);
+            HttpResponse response = httpClient.execute(httpPost);
             org.apache.http.HttpEntity apache_entity = response.getEntity();
-            String result = EntityUtils.toString(apache_entity);
+            String result = httpEntityStringifier.stringifyHttpEntity(apache_entity);
             logger.debug("Returned signature object: {}", result);
             JSONObject jObj = new JSONObject(result);
             EntityUtils.consume(apache_entity);
@@ -204,16 +214,6 @@ public class SignatureController implements EnvironmentAware {
          logger.debug("Received response: {}", respEntity);
 
          return new JSONObject(respEntity.getBody());
-      }
-   }
-
-   protected KeyStore readStore() throws Exception {
-      try (InputStream keyStoreStream = new FileInputStream(new File(keyStorePath))) {
-         KeyStore keyStore = KeyStore.getInstance("JKS");
-         keyStore.load(keyStoreStream, keyStorePassword.toCharArray());
-         return keyStore;
-      } catch (Exception e) {
-         throw new Exception("Error reading keystore", e);
       }
    }
 

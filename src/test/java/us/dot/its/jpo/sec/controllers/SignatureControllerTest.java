@@ -5,8 +5,19 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.util.Map;
+
+import javax.net.ssl.SSLContext;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,7 +32,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import mockit.Injectable;
+import us.dot.its.jpo.sec.helpers.HttpClientFactory;
+import us.dot.its.jpo.sec.helpers.HttpEntityStringifier;
+import us.dot.its.jpo.sec.helpers.KeyStoreReader;
 import us.dot.its.jpo.sec.helpers.RestTemplateFactory;
+import us.dot.its.jpo.sec.helpers.SSLContextFactory;
 import us.dot.its.jpo.sec.models.Message;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,6 +47,18 @@ public class SignatureControllerTest {
     @Mock
     protected RestTemplateFactory mockRestTemplateFactory;
 
+    @Mock
+    protected KeyStoreReader mockKeyStoreReader;
+
+    @Mock
+    protected SSLContextFactory mockSSLContextFactory;
+
+    @Mock
+    protected HttpClientFactory mockHttpClientFactory;
+
+    @Mock
+    HttpEntityStringifier mockHttpEntityStringifier;
+
     @Injectable
     Environment environment;
 
@@ -40,10 +67,15 @@ public class SignatureControllerTest {
 
     @BeforeEach
     public void setUp() {
-        mockRestTemplateFactory = mock(RestTemplateFactory.class);
         mockRestTemplate = mock(RestTemplate.class);
+        mockRestTemplateFactory = mock(RestTemplateFactory.class);
         doReturn(mockRestTemplate).when(mockRestTemplateFactory).getRestTemplate();
-        uut.injectBaseDependencies(environment, mockRestTemplateFactory);
+        mockKeyStoreReader = mock(KeyStoreReader.class);
+        mockSSLContextFactory = mock(SSLContextFactory.class);
+        mockHttpClientFactory = mock(HttpClientFactory.class);
+        mockHttpEntityStringifier = mock(HttpEntityStringifier.class);
+        uut.injectBaseDependencies(environment, mockRestTemplateFactory, mockKeyStoreReader, 
+                mockSSLContextFactory, mockHttpClientFactory, mockHttpEntityStringifier);
     }
 
     // @Test
@@ -146,10 +178,31 @@ public class SignatureControllerTest {
         assertEquals("test", response.get("result"));
     }
 
-    // @Test
-    // public void testForwardMessageToExternalService_useCertificates_True_SUCCESS() {
-    //     // TODO: implement
-    // }
+    @Test
+    public void testForwardMessageToExternalService_useCertificates_True_SUCCESS() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, ClientProtocolException, IOException, JSONException {
+        // prepare
+        setUp();
+        uut.setUseCertificates(true);
+        uut.setCryptoServiceBaseUri("http://example.com/");
+        uut.setCryptoServiceEndpointSignPath("endpoint");
+        SSLContext mockSSLContext = mock(SSLContext.class);
+        doReturn(mockSSLContext).when(mockSSLContextFactory).getSSLContext(any(), any());
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        doReturn(mockHttpClient).when(mockHttpClientFactory).getHttpClient(mockSSLContext);
+        HttpResponse mockHttpResponse = mock(HttpResponse.class);
+        doReturn(mockHttpResponse).when(mockHttpClient).execute(any());
+        org.apache.http.HttpEntity mockHttpEntity = mock(org.apache.http.HttpEntity.class);
+        doReturn(mockHttpEntity).when(mockHttpResponse).getEntity();
+        doReturn("{\"result\":\"test\"}").when(mockHttpEntityStringifier).stringifyHttpEntity(mockHttpEntity);
+        Message message = new Message();
+        message.setMsg("test");
+
+        // execute
+        JSONObject response = uut.forwardMessageToExternalService(message);
+
+        // verify
+        assertEquals("test", response.get("result"));
+    }
 
     // @Test
     // public void testForwardMessageToExternalService_useCertificates_True_ERROR() {
