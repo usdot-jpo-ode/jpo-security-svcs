@@ -80,10 +80,51 @@ public class SignatureControllerTest {
                 mockSSLContextFactory, mockHttpClientFactory, mockHttpEntityStringifier);
     }
 
-    // @Test
-    // public void testSign_SUCCESS() throws URISyntaxException {
-    //     // TODO: implement
-    // }
+    @Test
+    public void testSign_SUCCESS() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, ClientProtocolException, IOException {
+        // prepare
+        setUp();
+        uut.setUseCertificates(true);
+        uut.setCryptoServiceBaseUri("http://example.com/");
+        uut.setCryptoServiceEndpointSignPath("endpoint");
+        SSLContext mockSSLContext = mock(SSLContext.class);
+        doReturn(mockSSLContext).when(mockSSLContextFactory).getSSLContext(any(), any());
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        doReturn(mockHttpClient).when(mockHttpClientFactory).getHttpClient(mockSSLContext);
+        HttpResponse mockHttpResponse = mock(HttpResponse.class);
+        doReturn(mockHttpResponse).when(mockHttpClient).execute(any());
+        org.apache.http.HttpEntity mockHttpEntity = mock(org.apache.http.HttpEntity.class);
+        doReturn(mockHttpEntity).when(mockHttpResponse).getEntity();
+        doReturn("{\"message-signed\":\"test12345\",\"message-expiry\":1}").when(mockHttpEntityStringifier).stringifyHttpEntity(mockHttpEntity);
+        Message message = new Message();
+        message.setMsg("test");
+
+        // execute
+        ResponseEntity<Map<String, String>> response = uut.sign(message);
+
+        // verify
+        assertEquals(org.springframework.http.HttpStatus.OK, response.getStatusCode());
+        assertEquals("{\"message-expiry\":\"1\",\"message-signed\":\"test12345\"}", response.getBody().get("result"));
+    }
+
+    @Test
+    public void testSign_ERROR_NoResponse() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
+        // prepare
+        setUp();
+        uut.setUseCertificates(true);
+        uut.setCryptoServiceBaseUri("http://example.com/");
+        uut.setCryptoServiceEndpointSignPath("endpoint");
+        doThrow(new KeyManagementException()).when(mockSSLContextFactory).getSSLContext(any(), any());
+        Message message = new Message();
+        message.setMsg("test");
+
+        // execute
+        ResponseEntity<Map<String, String>> response = uut.sign(message);
+
+        // verify
+        assertEquals(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals("Error communicating with external service", response.getBody().get("error"));
+    }
 
     @Test
     public void testSign_CryptoServiceBaseUriNotSet() throws URISyntaxException {
@@ -121,42 +162,6 @@ public class SignatureControllerTest {
         assertEquals(org.springframework.http.HttpStatus.NOT_FOUND, response.getStatusCode());
         assertEquals(message.getMsg(), response.getBody().get("result"));
         assertEquals(expectedWarnString, response.getBody().get("warn"));
-    }
-
-    @Test
-    public void testTrimBaseUriAndEndpointPath_TrailingSlashInUri() {
-        // prepare
-        setUp();
-        String baseUri = "http://example.com/";
-        String endpointPath = "endpoint";
-        String expected = "http://example.com/endpoint";
-        
-        uut.setCryptoServiceBaseUri(baseUri);
-        uut.setCryptoServiceEndpointSignPath(endpointPath);
-
-        // execute
-        uut.trimBaseUriAndEndpointPath();
-
-        // verify
-        assertEquals(expected, uut.getCryptoServiceBaseUri() + "/" + uut.getCryptoServiceEndpointSignPath());
-    }
-
-    @Test
-    public void testTrimBaseUriAndEndpointPath_PrecedingSlashInPath() {
-        // prepare
-        setUp();
-        String baseUri = "http://example.com";
-        String endpointPath = "/endpoint";
-        String expected = "http://example.com/endpoint";
-        
-        uut.setCryptoServiceBaseUri(baseUri);
-        uut.setCryptoServiceEndpointSignPath(endpointPath);
-
-        // execute
-        uut.trimBaseUriAndEndpointPath();
-
-        // verify
-        assertEquals(expected, uut.getCryptoServiceBaseUri() + "/" + uut.getCryptoServiceEndpointSignPath());
     }
 
     @SuppressWarnings("unchecked")
@@ -222,6 +227,42 @@ public class SignatureControllerTest {
 
         // verify
         assertNull(response);
+    }
+
+    @Test
+    public void testTrimBaseUriAndEndpointPath_TrailingSlashInUri() {
+        // prepare
+        setUp();
+        String baseUri = "http://example.com/";
+        String endpointPath = "endpoint";
+        String expected = "http://example.com/endpoint";
+        
+        uut.setCryptoServiceBaseUri(baseUri);
+        uut.setCryptoServiceEndpointSignPath(endpointPath);
+
+        // execute
+        uut.trimBaseUriAndEndpointPath();
+
+        // verify
+        assertEquals(expected, uut.getCryptoServiceBaseUri() + "/" + uut.getCryptoServiceEndpointSignPath());
+    }
+
+    @Test
+    public void testTrimBaseUriAndEndpointPath_PrecedingSlashInPath() {
+        // prepare
+        setUp();
+        String baseUri = "http://example.com";
+        String endpointPath = "/endpoint";
+        String expected = "http://example.com/endpoint";
+        
+        uut.setCryptoServiceBaseUri(baseUri);
+        uut.setCryptoServiceEndpointSignPath(endpointPath);
+
+        // execute
+        uut.trimBaseUriAndEndpointPath();
+
+        // verify
+        assertEquals(expected, uut.getCryptoServiceBaseUri() + "/" + uut.getCryptoServiceEndpointSignPath());
     }
 
 }

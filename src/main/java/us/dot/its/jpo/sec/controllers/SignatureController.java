@@ -150,19 +150,6 @@ public class SignatureController implements EnvironmentAware {
 
    }
 
-   protected void trimBaseUriAndEndpointPath() {
-      logger.debug("Before trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
-      // Remove all slashes from the end of the URI, if any
-      while (cryptoServiceBaseUri != null && cryptoServiceBaseUri.endsWith("/")) {
-         cryptoServiceBaseUri = cryptoServiceBaseUri.substring(0, cryptoServiceBaseUri.lastIndexOf('/'));
-      }
-      // Remove all slashes from the beginning of the path string, if any
-      while (cryptoServiceEndpointSignPath != null && cryptoServiceEndpointSignPath.startsWith("/")) {
-         cryptoServiceEndpointSignPath = cryptoServiceEndpointSignPath.substring(1);
-      }
-      logger.debug("After Trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
-   }
-
    protected JSONObject forwardMessageToExternalService(Message message) throws URISyntaxException {
 
       HttpHeaders headers = new HttpHeaders();
@@ -215,6 +202,19 @@ public class SignatureController implements EnvironmentAware {
 
          return new JSONObject(respEntity.getBody());
       }
+   }
+
+   protected void trimBaseUriAndEndpointPath() {
+      logger.debug("Before trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
+      // Remove all slashes from the end of the URI, if any
+      while (cryptoServiceBaseUri != null && cryptoServiceBaseUri.endsWith("/")) {
+         cryptoServiceBaseUri = cryptoServiceBaseUri.substring(0, cryptoServiceBaseUri.lastIndexOf('/'));
+      }
+      // Remove all slashes from the beginning of the path string, if any
+      while (cryptoServiceEndpointSignPath != null && cryptoServiceEndpointSignPath.startsWith("/")) {
+         cryptoServiceEndpointSignPath = cryptoServiceEndpointSignPath.substring(1);
+      }
+      logger.debug("After Trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
    }
 
    @Override
