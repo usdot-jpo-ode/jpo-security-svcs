@@ -91,6 +91,6 @@ In `./src/main/resources/application.properties` you'll find the following prope
 | sec.useHsm | Whether to use an HSM or not. | false | SEC_USE_HSM |
 | sec.cryptoServiceBaseUri | Cryptographic service endpoint URI excluding path. For example, `http://<ip>:<port>` OR `http://server.dns.name` including the port number, if any. | - |SEC_CRYPTO_SERVICE_BASE_URI|
 | sec.cryptoServiceEndpointSignPath | The REST endpoint path of the external service. | /tmc/signtim |SEC_CRYPTO_SERVICE_ENDPOINT_SIGN_PATH|
-| sec.useCertficates | Whether to use certificates or not. | true | SEC_USE_CERTIFICATES |
+| sec.useCertificates | Whether to use certificates or not. | true | SEC_USE_CERTIFICATES |
 | sec.keyStorePath | The path to the keystore file. | /home/cert.jks | SEC_KEY_STORE_PATH |
 | sec.keyStorePassword | The password for the keystore file. | password | SEC_KEY_STORE_PASSWORD |
