@@ -15,6 +15,7 @@
  ******************************************************************************/
 package us.dot.its.jpo.sec.controllers;
 
+import us.dot.its.jpo.sec.helpers.RestTemplateFactory;
 import us.dot.its.jpo.sec.models.Message;
 
 import java.io.File;
@@ -65,6 +66,9 @@ public class SignatureController implements EnvironmentAware {
    @Autowired
    private Environment env;
 
+   @Autowired
+   private RestTemplateFactory restTemplateFactory;
+
    public String cryptoServiceBaseUri;
    private String cryptoServiceEndpointSignPath;
 
@@ -73,6 +77,12 @@ public class SignatureController implements EnvironmentAware {
    private String keyStorePassword;
 
    private static final Logger logger = LoggerFactory.getLogger(SignatureController.class);
+
+   @Autowired
+   public void injectBaseDependencies(Environment env, RestTemplateFactory restTemplateFactory) {
+      this.env = env;
+      this.restTemplateFactory = restTemplateFactory;
+   }
 
    @RequestMapping(value = "/sign", method = RequestMethod.POST, produces = "application/json")
    @ResponseBody
@@ -151,7 +161,7 @@ public class SignatureController implements EnvironmentAware {
          map = Collections.singletonMap("message", message.getMsg());
       }
       HttpEntity<Map<String, String>> entity = new HttpEntity<>(map, headers);
-      RestTemplate template = new RestTemplate();
+      RestTemplate template = restTemplateFactory.getRestTemplate();
 
       logger.debug("Received request: {}", entity);
 
