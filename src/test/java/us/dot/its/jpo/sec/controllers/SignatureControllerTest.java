@@ -230,6 +230,26 @@ public class SignatureControllerTest {
     }
 
     @Test
+    public void testForwardMessageToExternalService_useCertificates_True_FailureToCreateHttpContext() throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, ClientProtocolException, IOException, URISyntaxException {
+        // prepare
+        setUp();
+        uut.setUseCertificates(true);
+        uut.setCryptoServiceBaseUri("http://example.com/");
+        uut.setCryptoServiceEndpointSignPath("endpoint");
+        SSLContext mockSSLContext = mock(SSLContext.class);
+        doReturn(mockSSLContext).when(mockSSLContextFactory).getSSLContext(any(), any());
+        doReturn(null).when(mockHttpClientFactory).getHttpClient(mockSSLContext);
+        Message message = new Message();
+        message.setMsg("test");
+
+        // execute
+        JSONObject response = uut.forwardMessageToExternalService(message);
+
+        // verify
+        assertNull(response);
+    }
+
+    @Test
     public void testTrimBaseUriAndEndpointPath_TrailingSlashInUri() {
         // prepare
         setUp();
