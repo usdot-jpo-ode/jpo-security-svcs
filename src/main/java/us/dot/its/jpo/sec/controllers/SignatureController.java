@@ -177,6 +177,10 @@ public class SignatureController implements EnvironmentAware {
             KeyStore keyStore = keyStoreReader.readStore(keyStorePath, keyStorePassword);
             SSLContext sslContext = sslContextFactory.getSSLContext(keyStore, keyStorePassword);
             HttpClient httpClient = httpClientFactory.getHttpClient(sslContext);
+            if (httpClient == null) {
+               logger.error("Error creating HttpClient");
+               return null;
+            }
 
             HttpPost httpPost = new HttpPost(uri);
             httpPost.setHeader("Content-Type", "application/json");
