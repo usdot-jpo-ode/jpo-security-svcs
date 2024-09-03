@@ -69,7 +69,7 @@ In `./src/main/resources/application.properties` you'll find the following prope
 | sec.keyStorePassword | The password for the keystore file. | password | SEC_KEY_STORE_PASSWORD |
 
 ## Mutual TLS Authentication
-For enhanced security, MTLS is used to communicate with a remote signing system. This requires properly configured certificates from the remote system to property perform - work with your remote signing authority to obtain necessary certificates. 
+For enhanced security, MTLS is used to communicate with a remote signing system. This requires properly configured certificates from the remote system to properly perform - work with your remote signing authority to obtain necessary certificates. 
 
 ### Certificate Conversion
 Certificates can be in several different formats, including the widely used PEM format. Because this is a Java application, the signing certificates must be in the Java Keystore format to be used. The following commands using [OpenSSL](https://www.openssl.org/) and the Java keytool will convert a PEM file to a Java Keystore file.
