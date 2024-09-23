@@ -1,6 +1,17 @@
 Jpo-security-svcs Release Notes
 ----------------------------
 
+Version 1.5.0, released September 2024
+----------------------------------------
+### **Summary**
+The changes for the jpo-security-svcs v1.5.0 release include unit tests, documentation updates, and a GitHub action to publish java artifacts to GitHub's hosted Maven Central.
+
+Enhancements in this release:
+- CDOT PR 10: Added unit tests to the project
+- CDOT PR 11: Revised documentation for accuracy
+- CDOT PR 12: Added GitHub action to publish java artifacts to GitHub's hosted Maven Central
+
+
 Version 1.4.0, released February 2024
 ----------------------------------------
 
