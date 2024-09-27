@@ -25,7 +25,7 @@ jobs:
          mvn -e -X clean org.jacoco:jacoco-maven-plugin:prepare-agent package
          mvn -e -X clean org.jacoco:jacoco-maven-plugin:report package
      - name: Archive code coverage results
-       uses: actions/upload-artifact@v3
+       uses: actions/upload-artifact@v4
        with:
          name: jpo-security-svcs
          path: /__w/jpo-security-svcs/jpo-security-svcs/target 
@@ -34,9 +34,9 @@ jobs:
    runs-on: ubuntu-latest
    steps:  
      - name: Checkout ${{ github.event.repository.name }}
-       uses: actions/checkout@v3
+       uses: actions/checkout@v4
      - name: build tmca-tester
-       uses: actions/setup-node@v3
+       uses: actions/setup-node@v4
        with:
          node-version: '18.x'
      - run: |
@@ -48,11 +48,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0   
       - name: Download code coverage results
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: jpo-security-svcs
           path: home/runner/work/jpo-security-svcs/jpo-security-svcs/target     
