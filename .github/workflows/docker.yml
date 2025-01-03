@@ -15,7 +15,13 @@ jobs:
       - run: ls -la && pwd 
       - name: Build
         run: |
-          cd security-svc/ && \ 
-          docker buildx build . && \
-          cd ../ext-signature-svc-mock && \
-          docker buildx build .
+          build_service() {
+            local service_dir=$1
+            echo "Building Docker image for ${service_dir}..."
+            cd ${service_dir}
+            docker buildx build .
+            cd - > /dev/null
+          }
+          
+          build_service "security-svc"
+          build_service "ext-signature-svc-mock"
