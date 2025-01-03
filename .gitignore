@@ -12,3 +12,4 @@
 **.crt
 .sonar/
 dependency-reduced-pom.xml
+.idea/**
