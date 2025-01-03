@@ -73,11 +73,19 @@ for example, `--server.port=8091`:
 | sec.keyStorePath                  | The path to the keystore file.                                                                                                                      | /home/cert.jks | SEC_KEY_STORE_PATH                    |
 | sec.keyStorePassword              | The password for the keystore file.                                                                                                                 | password       | SEC_KEY_STORE_PASSWORD                |
 
-## Mutual TLS Authentication
+
+## Option 1: Use the ext-signature-svc-mock
+
+If you're looking to quickly explore/test the behaviors of this service and its API, then you may want to use the ext-signature-svc-mock.
+Usage and configuration information can be found in that [subproject's readme](ext-signature-svc-mock/README.md)
+
+## Option 2: Configure a local instance with MTLS authentication
+
+### Mutual TLS Authentication
 For enhanced security, MTLS is used to communicate with a remote signing system. This requires properly configured 
 certificates from the remote system to properly perform - work with your remote signing authority to obtain necessary certificates. 
 
-### Certificate Conversion
+#### Certificate Conversion
 Certificates can be in several different formats, including the widely used PEM format. 
 Because this is a Java application, the signing certificates must be in the Java Keystore format to be used. 
 The following commands using [OpenSSL](https://www.openssl.org/) and the Java keytool will convert a PEM file to a Java Keystore file.
@@ -91,12 +99,12 @@ openssl pkcs12 -export -in <cert.pem> -inkey <key.pem> -out <certificate.p12> -n
 keytool -importkeystore -srckeystore <certificate.p12> -srcstoretype pkcs12 -destkeystore <cert.jks>
 ```
 
-### Certificate Authority Issues
+#### Certificate Authority Issues
 If your remote signing authority is using their own certificates as a CA, you may need to import those certificates 
 into your Java truststore to allow the handshake to go through. Note that when running the dockerized application, 
 these CA certificates are to be one certificate per file (chain certificates are not supported).
 
-## Debugging
+### Debugging
 If running in VS Code, a launch.json has been included to allow for ease of debugging. A .env file can be created 
 using the sample.env file as a starting point. Once this settings file is in place, simply click the green arrow 
 in the debug tab to run the application. At this point all breakpoints will function as expected.
