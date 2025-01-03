@@ -28,7 +28,7 @@ jobs:
        uses: actions/upload-artifact@v4
        with:
          name: jpo-security-svcs
-         path: /__w/jpo-security-svcs/jpo-security-svcs/security-svc/target 
+         path: /home/runner/work/jpo-security-svcs/jpo-security-svcs/security-svc/target 
          if-no-files-found: error
   ext-signature-svc-mock:
     runs-on: ubuntu-latest
