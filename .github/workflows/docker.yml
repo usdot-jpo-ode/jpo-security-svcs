@@ -15,3 +15,5 @@ jobs:
       - run: ls -la && pwd 
       - name: Build
         uses: docker/build-push-action@v5
+        with:
+          file: security-svc/Dockerfile
