@@ -22,6 +22,8 @@ services:
         max-file: "5"
   mock-signing-svc:
     build: ./ext-signature-svc-mock/
+    profiles:
+      - local
     image: jpoode_sec_mock_signing_svc:latest
     ports:
       - "8091:8091"
