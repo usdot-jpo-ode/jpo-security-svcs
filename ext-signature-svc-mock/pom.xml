@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>us.dot.its.jpo.sec.mock</groupId>
-	<artifactId>signer</artifactId>
+	<artifactId>mock-signer</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Mock Signing Service</name>
 	<description>A mock signing service to simulate signing behaviors</description>
@@ -46,6 +46,7 @@
 	</dependencies>
 
 	<build>
+		<finalName>${project.artifactId}</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -77,5 +78,7 @@
 			</plugin>
 		</plugins>
 	</build>
+
+
 
 </project>
