@@ -28,7 +28,7 @@ jobs:
        uses: actions/upload-artifact@v4
        with:
          name: jpo-security-svcs
-         path: /home/runner/work/jpo-security-svcs/jpo-security-svcs/security-svc/target 
+         path: /__w/jpo-security-svcs/jpo-security-svcs/security-svc/target 
          if-no-files-found: error
   ext-signature-svc-mock:
     runs-on: ubuntu-latest
@@ -39,14 +39,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/ext-signature-svc-mock
           ls -ls && pwd
-          ./mvnw -e  clean org.jacoco:jacoco-maven-plugin:prepare-agent package
-          ./mvnw -e clean org.jacoco:jacoco-maven-plugin:report package
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v4
-        with:
-          name: jpo-security-svcs
-          path: /home/runner/work/jpo-security-svcs/jpo-security-svcs/ext-signature-svc-mock/target/
-          if-no-files-found: error
+          ./mvnw -e  clean package
   tmca-tester:
    runs-on: ubuntu-latest
    steps:  
