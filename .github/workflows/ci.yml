@@ -39,13 +39,13 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/ext-signature-svc-mock
           ls -ls && pwd
-          ./mvnw -e -X clean org.jacoco:jacoco-maven-plugin:prepare-agent package
-          ./mvnw -e -X clean org.jacoco:jacoco-maven-plugin:report package
+          ./mvnw -e  clean org.jacoco:jacoco-maven-plugin:prepare-agent package
+          ./mvnw -e clean org.jacoco:jacoco-maven-plugin:report package
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4
         with:
           name: jpo-security-svcs
-          path: /__w/jpo-security-svcs/jpo-security-svcs/ext-signature-svc-mock/target
+          path: /home/runner/work/jpo-security-svcs/jpo-security-svcs/ext-signature-svc-mock/target/
           if-no-files-found: error
   tmca-tester:
    runs-on: ubuntu-latest
