@@ -108,7 +108,16 @@ Once both applications are running:
 
 ## Running with Docker (Optional)
 
-If you want to run the applications in Docker containers, you can use the provided `Dockerfile` in each subdirectory.
+If you want to run the applications in Docker containers, you can use the provided `Dockerfile` in each subdirectory or
+the docker-compose.yaml file in the root directory (this directory).
+
+### Building and Running `security-svc` with `ext-signature-svc-mock` using docker-compose
+
+From this directory:
+
+```bash
+docker-compose --profile local up --build -d
+```
 
 ### Building and Running `security-svc` with Docker
 
