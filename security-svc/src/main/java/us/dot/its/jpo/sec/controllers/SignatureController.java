@@ -91,7 +91,7 @@ public class SignatureController implements EnvironmentAware {
             logger.warn("Properties sec.cryptoServiceBaseUri={}, sec.cryptoServiceEndpointSignPath={} not defined. Cannot sign message.",
                     cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
 
-            throw new SignatureControllerException("Cannot sign message - external signing service not configured.", HttpStatus.NOT_FOUND);
+            throw new SignatureControllerException("Cannot sign message - signing service not configured.", HttpStatus.NOT_FOUND);
         }
 
         logger.info("Sending signature request to external service");
@@ -99,20 +99,13 @@ public class SignatureController implements EnvironmentAware {
 
         ResponseEntity<SignatureResponse> response;
         var signatureResponse = new SignatureResponse();
-//        if (json != null) {
-            signatureResponse.setMessageSigned(json.getString("message-signed"));
-            try {
-                signatureResponse.setMessageExpiry(String.valueOf(json.getLong("message-expiry")));
-            } catch (Exception e) {
-                signatureResponse.setMessageExpiry("null");
-            }
-            response = ResponseEntity.status(HttpStatus.OK).body(signatureResponse);
-//        }
-//        else {
-//            // no response from external service
-//            response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(Collections.singletonMap("error", "Error communicating with external service"));
-//        }
+        signatureResponse.setMessageSigned(json.getString("message-signed"));
+        try {
+            signatureResponse.setMessageExpiry(String.valueOf(json.getLong("message-expiry")));
+        } catch (Exception e) {
+            signatureResponse.setMessageExpiry("null");
+        }
+        response = ResponseEntity.status(HttpStatus.OK).body(signatureResponse);
 
         return response;
 

@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -15,7 +16,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleException(Exception e) {
         logger.error("handleException: {}", e.getMessage());
         ApiError apiError = new ApiError();
-        apiError.setMessage(e.getMessage());
+        // Return an intentionally vague message to prevent information leakage
+        apiError.setMessage("Unable to process request.");
         apiError.setTimestamp(String.valueOf(System.currentTimeMillis()));
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiError);
     }
