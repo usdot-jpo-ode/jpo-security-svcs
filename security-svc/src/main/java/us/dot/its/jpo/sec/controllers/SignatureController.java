@@ -77,24 +77,22 @@ public class SignatureController implements EnvironmentAware {
     }
 
     @PostMapping(value = "/sign", produces = "application/json")
-    public ResponseEntity<SignatureResponse> sign(@RequestBody Message message) throws URISyntaxException {
-        logger.info("Received message: {} with sigValidityOverride: {}", message.getMsg(), message.getSigValidityOverride());
+    public ResponseEntity<SignatureResponse> sign(@RequestBody Message message) throws Exception {logger.info("Received message: {} with sigValidityOverride: {}", message.getMsg(), message.getSigValidityOverride());
 
         trimBaseUriAndEndpointPath();
 
         String resultString = message.getMsg();
-//      if ((cryptoServiceBaseUri == null || cryptoServiceBaseUri.length() == 0) || (cryptoServiceEndpointSignPath == null || cryptoServiceEndpointSignPath.length() == 0)) {
-//         // base URI or endpoint path not set, return the message unchanged
-//         String msg = "Properties sec.cryptoServiceBaseUri=" + cryptoServiceBaseUri
-//               + ", sec.cryptoServiceEndpointSignPath=" + cryptoServiceEndpointSignPath
-//               + " Not defined. Returning the message unchanged.";
-//         logger.warn(msg);
+        if ((cryptoServiceBaseUri == null || cryptoServiceBaseUri.length() == 0) || (cryptoServiceEndpointSignPath == null || cryptoServiceEndpointSignPath.length() == 0)) {
+            // base URI or endpoint path not set, return the message unchanged
+            String msg = "Properties sec.cryptoServiceBaseUri=" + cryptoServiceBaseUri
+                    + ", sec.cryptoServiceEndpointSignPath=" + cryptoServiceEndpointSignPath
+                    + " Not defined. Returning the message unchanged.";
+            logger.warn(msg);
 //         Map<String, String> result = new HashMap<String, String>();
 //         result.put("result", resultString);
 //         result.put("warn", msg);
-//         response = ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
-//         return response;
-//      }
+            throw new Exception(msg);
+        }
 
         logger.info("Sending signature request to external service");
         JSONObject json = forwardMessageToExternalService(message);
