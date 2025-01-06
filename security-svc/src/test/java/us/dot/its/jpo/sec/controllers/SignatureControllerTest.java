@@ -84,7 +84,7 @@ public class SignatureControllerTest {
     }
 
     @Test
-    public void testSign_SUCCESS() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, ClientProtocolException, IOException, SignatureControllerException {
+    public void testSign_SUCCESS() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, ClientProtocolException, IOException, SignatureControllerException, CertificateException {
         // prepare
         setUp();
         uut.setUseCertificates(true);
@@ -111,7 +111,7 @@ public class SignatureControllerTest {
     }
 
     @Test
-    public void testSign_ERROR_NoResponse() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, JsonProcessingException, SignatureControllerException {
+    public void testSign_ERROR_NoResponse() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, IOException, SignatureControllerException, CertificateException {
         // prepare
         setUp();
         uut.setUseCertificates(true);
@@ -130,7 +130,7 @@ public class SignatureControllerTest {
     }
 
     @Test
-    public void testSign_CryptoServiceBaseUriNotSet() throws URISyntaxException, SignatureControllerException {
+    public void testSign_CryptoServiceBaseUriNotSet() throws URISyntaxException, SignatureControllerException, UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         // prepare
         setUp();
         uut.setCryptoServiceBaseUri(null);
@@ -149,7 +149,7 @@ public class SignatureControllerTest {
     }
 
     @Test
-    public void testSign_CryptoServiceEndpointSignPathNotSet() throws URISyntaxException, SignatureControllerException {
+    public void testSign_CryptoServiceEndpointSignPathNotSet() throws URISyntaxException, SignatureControllerException, UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         // prepare
         setUp();
         uut.setCryptoServiceBaseUri("http://example.com/");

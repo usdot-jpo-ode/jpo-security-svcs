@@ -80,7 +80,8 @@ public class SignatureController implements EnvironmentAware {
     }
 
     @PostMapping(value = "/sign", produces = "application/json")
-    public ResponseEntity<SignatureResponse> sign(@RequestBody Message message) throws SignatureControllerException, URISyntaxException {
+    public ResponseEntity<SignatureResponse> sign(@RequestBody Message message)
+            throws SignatureControllerException, URISyntaxException, UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         logger.info("Received message: {} with sigValidityOverride: {}", message.getMsg(), message.getSigValidityOverride());
 
         trimBaseUriAndEndpointPath();
