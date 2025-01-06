@@ -19,6 +19,7 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 
 import javax.net.ssl.SSLContext;
 
@@ -83,7 +84,7 @@ public class SignatureControllerTest {
     }
 
     @Test
-    public void testSign_SUCCESS() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, ClientProtocolException, IOException {
+    public void testSign_SUCCESS() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, ClientProtocolException, IOException, SignatureControllerException {
         // prepare
         setUp();
         uut.setUseCertificates(true);
@@ -110,7 +111,7 @@ public class SignatureControllerTest {
     }
 
     @Test
-    public void testSign_ERROR_NoResponse() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, JsonProcessingException {
+    public void testSign_ERROR_NoResponse() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, JsonProcessingException, SignatureControllerException {
         // prepare
         setUp();
         uut.setUseCertificates(true);
@@ -129,7 +130,7 @@ public class SignatureControllerTest {
     }
 
     @Test
-    public void testSign_CryptoServiceBaseUriNotSet() throws URISyntaxException {
+    public void testSign_CryptoServiceBaseUriNotSet() throws URISyntaxException, SignatureControllerException {
         // prepare
         setUp();
         uut.setCryptoServiceBaseUri(null);
@@ -148,7 +149,7 @@ public class SignatureControllerTest {
     }
 
     @Test
-    public void testSign_CryptoServiceEndpointSignPathNotSet() throws URISyntaxException {
+    public void testSign_CryptoServiceEndpointSignPathNotSet() throws URISyntaxException, SignatureControllerException {
         // prepare
         setUp();
         uut.setCryptoServiceBaseUri("http://example.com/");
@@ -168,7 +169,7 @@ public class SignatureControllerTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testForwardMessageToExternalService_useCertificates_False() throws URISyntaxException, JSONException {
+    public void testForwardMessageToExternalService_useCertificates_False() throws URISyntaxException, JSONException, SignatureControllerException, UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         // prepare
         setUp();
         uut.setUseCertificates(false);
@@ -188,7 +189,7 @@ public class SignatureControllerTest {
     }
 
     @Test
-    public void testForwardMessageToExternalService_useCertificates_True_SUCCESS() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, ClientProtocolException, IOException, JSONException {
+    public void testForwardMessageToExternalService_useCertificates_True_SUCCESS() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, ClientProtocolException, IOException, JSONException, CertificateException, SignatureControllerException {
         // prepare
         setUp();
         uut.setUseCertificates(true);
@@ -214,7 +215,7 @@ public class SignatureControllerTest {
     }
 
     @Test
-    public void testForwardMessageToExternalService_useCertificates_True_ERROR() throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, URISyntaxException {
+    public void testForwardMessageToExternalService_useCertificates_True_ERROR() throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, URISyntaxException, CertificateException, IOException, SignatureControllerException {
         // prepare
         setUp();
         uut.setUseCertificates(true);
@@ -232,7 +233,7 @@ public class SignatureControllerTest {
     }
 
     @Test
-    public void testForwardMessageToExternalService_useCertificates_True_FailureToCreateHttpContext() throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, ClientProtocolException, IOException, URISyntaxException {
+    public void testForwardMessageToExternalService_useCertificates_True_FailureToCreateHttpContext() throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, ClientProtocolException, IOException, URISyntaxException, CertificateException, SignatureControllerException {
         // prepare
         setUp();
         uut.setUseCertificates(true);

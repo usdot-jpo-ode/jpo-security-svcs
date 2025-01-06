@@ -15,6 +15,7 @@
  ******************************************************************************/
 package us.dot.its.jpo.sec.controllers;
 
+import joptsimple.internal.Strings;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -36,9 +37,11 @@ import us.dot.its.jpo.sec.models.Message;
 import us.dot.its.jpo.sec.models.SignatureResponse;
 
 import javax.net.ssl.SSLContext;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.KeyStore;
+import java.security.*;
+import java.security.cert.CertificateException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -77,21 +80,17 @@ public class SignatureController implements EnvironmentAware {
     }
 
     @PostMapping(value = "/sign", produces = "application/json")
-    public ResponseEntity<SignatureResponse> sign(@RequestBody Message message) throws Exception {logger.info("Received message: {} with sigValidityOverride: {}", message.getMsg(), message.getSigValidityOverride());
+    public ResponseEntity<SignatureResponse> sign(@RequestBody Message message) throws SignatureControllerException, URISyntaxException {
+        logger.info("Received message: {} with sigValidityOverride: {}", message.getMsg(), message.getSigValidityOverride());
 
         trimBaseUriAndEndpointPath();
 
-        String resultString = message.getMsg();
-        if ((cryptoServiceBaseUri == null || cryptoServiceBaseUri.length() == 0) || (cryptoServiceEndpointSignPath == null || cryptoServiceEndpointSignPath.length() == 0)) {
+        if (Strings.isNullOrEmpty(cryptoServiceBaseUri) || Strings.isNullOrEmpty(cryptoServiceEndpointSignPath)) {
             // base URI or endpoint path not set, return the message unchanged
-            String msg = "Properties sec.cryptoServiceBaseUri=" + cryptoServiceBaseUri
-                    + ", sec.cryptoServiceEndpointSignPath=" + cryptoServiceEndpointSignPath
-                    + " Not defined. Returning the message unchanged.";
-            logger.warn(msg);
-//         Map<String, String> result = new HashMap<String, String>();
-//         result.put("result", resultString);
-//         result.put("warn", msg);
-            throw new Exception(msg);
+            logger.warn("Properties sec.cryptoServiceBaseUri={}, sec.cryptoServiceEndpointSignPath={} not defined. Cannot sign message.",
+                    cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
+
+            throw new SignatureControllerException("Cannot sign message - external signing service not configured.", HttpStatus.NOT_FOUND);
         }
 
         logger.info("Sending signature request to external service");
@@ -118,7 +117,8 @@ public class SignatureController implements EnvironmentAware {
 
     }
 
-    protected JSONObject forwardMessageToExternalService(Message message) throws URISyntaxException {
+    protected JSONObject forwardMessageToExternalService(Message message)
+            throws URISyntaxException, SignatureControllerException, IOException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, CertificateException {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -136,39 +136,32 @@ public class SignatureController implements EnvironmentAware {
 
         logger.debug("Received request: {}", entity);
 
-        URI uri = new URI(cryptoServiceBaseUri + "/" + cryptoServiceEndpointSignPath);
+        URI uri = new URI("%s/%s".formatted(cryptoServiceBaseUri, cryptoServiceEndpointSignPath));
 
         logger.debug("Sending request to: {}", uri);
 
         if (useCertificates) {
-            try {
-                KeyStore keyStore = keyStoreReader.readStore(keyStorePath, keyStorePassword);
-                SSLContext sslContext = sslContextFactory.getSSLContext(keyStore, keyStorePassword);
-                HttpClient httpClient = httpClientFactory.getHttpClient(sslContext);
-                if (httpClient == null) {
-                    logger.error("Error creating HttpClient");
-                    return null;
-                }
 
-                HttpPost httpPost = new HttpPost(uri);
-                httpPost.setHeader("Content-Type", "application/json");
-                org.apache.http.HttpEntity entity2 = new org.apache.http.entity.StringEntity(new JSONObject(map).toString());
-                httpPost.setEntity(entity2);
-
-                HttpResponse response = httpClient.execute(httpPost);
-                org.apache.http.HttpEntity apache_entity = response.getEntity();
-                String result = httpEntityStringifier.stringifyHttpEntity(apache_entity);
-                logger.debug("Returned signature object: {}", result);
-                JSONObject jObj = new JSONObject(result);
-                EntityUtils.consume(apache_entity);
-                return jObj;
-
-            } catch (Exception e) {
-                logger.error("Error creating SSLContext", e);
-                return null;
+            KeyStore keyStore = keyStoreReader.readStore(keyStorePath, keyStorePassword);
+            SSLContext sslContext = sslContextFactory.getSSLContext(keyStore, keyStorePassword);
+            HttpClient httpClient = httpClientFactory.getHttpClient(sslContext);
+            if (httpClient == null) {
+                throw new SignatureControllerException("Unable to connect to external signing service", HttpStatus.INTERNAL_SERVER_ERROR);
             }
-        } else {
 
+            HttpPost httpPost = new HttpPost(uri);
+            httpPost.setHeader("Content-Type", "application/json");
+            org.apache.http.HttpEntity entity2 = new org.apache.http.entity.StringEntity(new JSONObject(map).toString());
+            httpPost.setEntity(entity2);
+
+            HttpResponse response = httpClient.execute(httpPost);
+            org.apache.http.HttpEntity apacheEntity = response.getEntity();
+            String result = httpEntityStringifier.stringifyHttpEntity(apacheEntity);
+            logger.debug("Returned signature object: {}", result);
+            JSONObject jObj = new JSONObject(result);
+            EntityUtils.consume(apacheEntity);
+            return jObj;
+        } else {
             ResponseEntity<String> respEntity = template.postForEntity(uri, entity, String.class);
             logger.debug("Received response: {}", respEntity);
 
