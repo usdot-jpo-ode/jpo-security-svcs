@@ -38,6 +38,7 @@ import us.dot.its.jpo.sec.models.SignatureResponse;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.*;
@@ -80,8 +81,7 @@ public class SignatureController implements EnvironmentAware {
     }
 
     @PostMapping(value = "/sign", produces = "application/json")
-    public ResponseEntity<SignatureResponse> sign(@RequestBody Message message)
-            throws SignatureControllerException, URISyntaxException, UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+    public ResponseEntity<SignatureResponse> sign(@RequestBody Message message) throws SignatureControllerException {
         logger.info("Received message: {} with sigValidityOverride: {}", message.getMsg(), message.getSigValidityOverride());
 
         trimBaseUriAndEndpointPath();
@@ -111,8 +111,7 @@ public class SignatureController implements EnvironmentAware {
 
     }
 
-    protected JSONObject forwardMessageToExternalService(Message message)
-            throws URISyntaxException, SignatureControllerException, IOException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, CertificateException {
+    protected JSONObject forwardMessageToExternalService(Message message) throws SignatureControllerException {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -130,14 +129,27 @@ public class SignatureController implements EnvironmentAware {
 
         logger.debug("Received request: {}", entity);
 
-        URI uri = new URI("%s/%s".formatted(cryptoServiceBaseUri, cryptoServiceEndpointSignPath));
+        URI uri;
+        try {
+            uri = new URI("%s/%s".formatted(cryptoServiceBaseUri, cryptoServiceEndpointSignPath));
+        } catch (URISyntaxException e) {
+            throw new SignatureControllerException("Invalid signing service configuration - cannot sign message", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
         logger.debug("Sending request to: {}", uri);
 
         if (useCertificates) {
+            KeyStore keyStore;
+            SSLContext sslContext;
+            try {
+                keyStore = keyStoreReader.readStore(keyStorePath, keyStorePassword);
+                sslContext = sslContextFactory.getSSLContext(keyStore, keyStorePassword);
+            } catch (KeyManagementException | UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException |
+                     IOException | CertificateException e) {
+                logger.error("Unable to initialize ssl: {}", e.getMessage(), e);
+                throw new SignatureControllerException("Unable to connect to external signing service", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
 
-            KeyStore keyStore = keyStoreReader.readStore(keyStorePath, keyStorePassword);
-            SSLContext sslContext = sslContextFactory.getSSLContext(keyStore, keyStorePassword);
             HttpClient httpClient = httpClientFactory.getHttpClient(sslContext);
             if (httpClient == null) {
                 throw new SignatureControllerException("Unable to connect to external signing service", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -145,16 +157,41 @@ public class SignatureController implements EnvironmentAware {
 
             HttpPost httpPost = new HttpPost(uri);
             httpPost.setHeader("Content-Type", "application/json");
-            org.apache.http.HttpEntity entity2 = new org.apache.http.entity.StringEntity(new JSONObject(map).toString());
-            httpPost.setEntity(entity2);
+            org.apache.http.HttpEntity postEntity;
+            try {
+                postEntity = new org.apache.http.entity.StringEntity(new JSONObject(map).toString());
+            } catch (UnsupportedEncodingException e) {
+                throw new SignatureControllerException("Invalid request body.", HttpStatus.BAD_REQUEST);
+            }
+            httpPost.setEntity(postEntity);
 
-            HttpResponse response = httpClient.execute(httpPost);
-            org.apache.http.HttpEntity apacheEntity = response.getEntity();
-            String result = httpEntityStringifier.stringifyHttpEntity(apacheEntity);
+            HttpResponse response;
+            try {
+                response = httpClient.execute(httpPost);
+            } catch (IOException e) {
+                logger.error("Unable to execute http request: {}", e.getMessage(), e);
+                throw new SignatureControllerException("Unable to sign message.", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            org.apache.http.HttpEntity responseEntity = response.getEntity();
+            String result;
+            try {
+                result = httpEntityStringifier.stringifyHttpEntity(responseEntity);
+            } catch (IOException e) {
+                logger.error("Unable to read response from external signing service: {}", e.getMessage(), e);
+                throw new SignatureControllerException("Unable to read response from external signing service", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
             logger.debug("Returned signature object: {}", result);
-            JSONObject jObj = new JSONObject(result);
-            EntityUtils.consume(apacheEntity);
-            return jObj;
+
+            try {
+                EntityUtils.consume(responseEntity);
+            } catch (IOException e) {
+                logger.error("Unable to consume response from external signing service: {}", e.getMessage(), e);
+                throw new SignatureControllerException("Unable to consume response from external signing service", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            return new JSONObject(result);
         } else {
             ResponseEntity<String> respEntity = template.postForEntity(uri, entity, String.class);
             logger.debug("Received response: {}", respEntity);
