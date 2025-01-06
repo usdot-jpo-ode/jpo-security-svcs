@@ -87,8 +87,7 @@ public class SignatureController implements EnvironmentAware {
         this.httpEntityStringifier = httpEntityStringifier;
     }
 
-    @RequestMapping(value = "/sign", method = RequestMethod.POST, produces = "application/json")
-    @ResponseBody
+    @PostMapping(value = "/sign", produces = "application/json")
     public ResponseEntity<SignatureResponse> sign(@RequestBody Message message) throws URISyntaxException {
         logger.info("Received message: {} with sigValidityOverride: {}", message.getMsg(), message.getSigValidityOverride());
 

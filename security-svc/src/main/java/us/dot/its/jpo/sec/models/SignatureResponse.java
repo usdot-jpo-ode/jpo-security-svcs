@@ -1,8 +1,8 @@
 package us.dot.its.jpo.sec.models;
 
 public class SignatureResponse {
-    private String messageSigned;
     private String messageExpiry;
+    private String messageSigned;
 
     public String getMessageSigned() {
         return messageSigned;

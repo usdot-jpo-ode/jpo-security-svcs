@@ -10,6 +10,8 @@ import static org.mockito.Mockito.mock;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -66,6 +68,7 @@ public class SignatureControllerTest {
 
     @InjectMocks
     SignatureController uut = new SignatureController();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     public void setUp() {
@@ -100,15 +103,15 @@ public class SignatureControllerTest {
         message.setMsg("test");
 
         // execute
-        ResponseEntity<Map<String, String>> response = uut.sign(message);
+        var response = uut.sign(message);
 
         // verify
         assertEquals(org.springframework.http.HttpStatus.OK, response.getStatusCode());
-        assertEquals("{\"message-expiry\":\"1\",\"message-signed\":\"test12345\"}", response.getBody().get("result"));
+        assertEquals("{\"messageExpiry\":\"1\",\"messageSigned\":\"test12345\"}", objectMapper.writeValueAsString(response.getBody()));
     }
 
     @Test
-    public void testSign_ERROR_NoResponse() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
+    public void testSign_ERROR_NoResponse() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, JsonProcessingException {
         // prepare
         setUp();
         uut.setUseCertificates(true);
@@ -119,11 +122,11 @@ public class SignatureControllerTest {
         message.setMsg("test");
 
         // execute
-        ResponseEntity<Map<String, String>> response = uut.sign(message);
+        var response = uut.sign(message);
 
         // verify
         assertEquals(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("Error communicating with external service", response.getBody().get("error"));
+        assertEquals("Error communicating with external service", objectMapper.writeValueAsString(response.getBody()));
     }
 
     @Test
@@ -137,12 +140,12 @@ public class SignatureControllerTest {
         String expectedWarnString = "Properties sec.cryptoServiceBaseUri=null, sec.cryptoServiceEndpointSignPath=endpoint Not defined. Returning the message unchanged.";
 
         // execute
-        ResponseEntity<Map<String, String>> response = uut.sign(message);
+        var response = uut.sign(message);
 
         // verify
         assertEquals(org.springframework.http.HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertEquals(message.getMsg(), response.getBody().get("result"));
-        assertEquals(expectedWarnString, response.getBody().get("warn"));
+        assertEquals(message.getMsg(), response.getBody().getMessageSigned());
+        assertEquals(expectedWarnString, response.getBody().getMessageSigned());
     }
 
     @Test
@@ -156,12 +159,12 @@ public class SignatureControllerTest {
         String expectedWarnString = "Properties sec.cryptoServiceBaseUri=http://example.com, sec.cryptoServiceEndpointSignPath=null Not defined. Returning the message unchanged.";
 
         // execute
-        ResponseEntity<Map<String, String>> response = uut.sign(message);
+        var response = uut.sign(message);
 
         // verify
         assertEquals(org.springframework.http.HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertEquals(message.getMsg(), response.getBody().get("result"));
-        assertEquals(expectedWarnString, response.getBody().get("warn"));
+        assertEquals(message.getMsg(), response.getBody().getMessageSigned());
+        assertEquals(expectedWarnString, response.getBody().getMessageSigned());
     }
 
     @SuppressWarnings("unchecked")
@@ -172,7 +175,7 @@ public class SignatureControllerTest {
         uut.setUseCertificates(false);
         uut.setCryptoServiceBaseUri("http://example.com/");
         uut.setCryptoServiceEndpointSignPath("endpoint");
-        ResponseEntity<Map<String, String>> mockResponseEntity = mock(ResponseEntity.class);
+        var mockResponseEntity = mock(ResponseEntity.class);
         doReturn("{\"result\":\"test\"}").when(mockResponseEntity).getBody();
         doReturn(mockResponseEntity).when(mockRestTemplate).postForEntity(any(), any(), any());
         Message message = new Message();
