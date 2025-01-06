@@ -19,7 +19,6 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
-import java.util.Map;
 
 import javax.net.ssl.SSLContext;
 
@@ -67,7 +66,7 @@ public class SignatureControllerTest {
     Environment environment;
 
     @InjectMocks
-    SignatureController uut = new SignatureController();
+    SignatureController uut;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
@@ -79,7 +78,7 @@ public class SignatureControllerTest {
         mockSSLContextFactory = mock(SSLContextFactory.class);
         mockHttpClientFactory = mock(HttpClientFactory.class);
         mockHttpEntityStringifier = mock(HttpEntityStringifier.class);
-        uut.injectBaseDependencies(environment, mockRestTemplateFactory, mockKeyStoreReader, 
+        uut = new SignatureController(environment, mockRestTemplateFactory, mockKeyStoreReader,
                 mockSSLContextFactory, mockHttpClientFactory, mockHttpEntityStringifier);
     }
 

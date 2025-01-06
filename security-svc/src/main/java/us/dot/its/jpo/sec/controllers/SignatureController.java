@@ -49,23 +49,12 @@ import java.util.Map;
 @RestController
 public class SignatureController implements EnvironmentAware {
 
-    @Autowired
     private Environment env;
-
-    @Autowired
-    private RestTemplateFactory restTemplateFactory;
-
-    @Autowired
-    private KeyStoreReader keyStoreReader;
-
-    @Autowired
-    private SSLContextFactory sslContextFactory;
-
-    @Autowired
-    private HttpClientFactory httpClientFactory;
-
-    @Autowired
-    private HttpEntityStringifier httpEntityStringifier;
+    private final RestTemplateFactory restTemplateFactory;
+    private final KeyStoreReader keyStoreReader;
+    private final SSLContextFactory sslContextFactory;
+    private final HttpClientFactory httpClientFactory;
+    private final HttpEntityStringifier httpEntityStringifier;
 
     public String cryptoServiceBaseUri;
     private String cryptoServiceEndpointSignPath;
@@ -77,8 +66,8 @@ public class SignatureController implements EnvironmentAware {
     private static final Logger logger = LoggerFactory.getLogger(SignatureController.class);
 
     @Autowired
-    public void injectBaseDependencies(Environment env, RestTemplateFactory restTemplateFactory, KeyStoreReader keyStoreReader,
-                                       SSLContextFactory sslContextFactory, HttpClientFactory httpClientFactory, HttpEntityStringifier httpEntityStringifier) {
+    public SignatureController(Environment env, RestTemplateFactory restTemplateFactory, KeyStoreReader keyStoreReader,
+                                    SSLContextFactory sslContextFactory, HttpClientFactory httpClientFactory, HttpEntityStringifier httpEntityStringifier) {
         this.env = env;
         this.restTemplateFactory = restTemplateFactory;
         this.keyStoreReader = keyStoreReader;
