@@ -20,7 +20,7 @@ services:
         max-size: "10m"  
         max-file: "5"
   mock-signing-svc:
-    build: ./ext-signature-svc-mock/
+    build: mock-signing-svc/
     profiles:
       - local
     image: jpoode_sec_mock_signing_svc:latest

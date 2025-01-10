@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>us.dot.its.jpo.sec.mock</groupId>
-	<artifactId>mock-signer</artifactId>
+	<artifactId>mock-signing-svc</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Mock Signing Service</name>
 	<description>A mock signing service to simulate signing behaviors</description>
