@@ -11,7 +11,6 @@ services:
       SEC_USE_CERTIFICATES: ${SEC_USE_CERTIFICATES}
       #SEC_KEY_STORE_PATH: ${SEC_KEY_STORE_PATH}
       SEC_KEY_STORE_PASSWORD: ${SEC_KEY_STORE_PASSWORD}
-      DOCKER_HOST_IP: ${DOCKER_HOST_IP}
     volumes: 
       - ./security-svc/src/main/resources/creds:/usr/local/share/ca-certificates
       - ./security-svc/src/main/resources/cert.jks:/home/cert.jks
