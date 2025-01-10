@@ -4,7 +4,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class SignatureExceptionHandlerTest {
 
@@ -20,9 +21,10 @@ class SignatureExceptionHandlerTest {
         ResponseEntity<ApiError> response = handler.handleSignatureControllerException(mockException);
 
         // Assert
-        assertThat(response.getStatusCode()).isEqualTo(status);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getMessage()).isEqualTo(exceptionMessage);
-        assertThat(response.getBody().getTimestamp()).isNotNull();
+        assertEquals(status, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertNotNull(response.getBody().getMessage());
+        assertNotNull(response.getBody().getTimestamp());
+        assertEquals(exceptionMessage, response.getBody().getMessage());
     }
 }
