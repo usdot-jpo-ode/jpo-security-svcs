@@ -91,7 +91,7 @@ Run `ext-signature-svc-mock`:
 java -jar target/ext-signature-svc-mock.jar
 ```
 
-By default, this service runs on `http://localhost:9090`. You can update the port similarly using
+By default, this service runs on `http://localhost:8091`. You can update the port similarly using
 `application.properties` or environment variables.
 
 ---
