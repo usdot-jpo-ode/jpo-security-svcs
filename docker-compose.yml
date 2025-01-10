@@ -12,8 +12,8 @@ services:
       #SEC_KEY_STORE_PATH: ${SEC_KEY_STORE_PATH}
       SEC_KEY_STORE_PASSWORD: ${SEC_KEY_STORE_PASSWORD}
     volumes: 
-      - ./security-svc/src/main/resources/creds:/usr/local/share/ca-certificates
-      - ./security-svc/src/main/resources/cert.jks:/home/cert.jks
+      - ./jpo-security-svcs/src/main/resources/creds:/usr/local/share/ca-certificates
+      - ./jpo-security-svcs/src/main/resources/cert.jks:/home/cert.jks
     command: sh -c "update-ca-certificates && java -Dlogback.configurationFile=/home/logback.xml -jar /home/jpo-security-svcs.jar"
     logging:
       options:

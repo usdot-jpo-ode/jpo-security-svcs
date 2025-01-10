@@ -74,10 +74,10 @@ for example, `--server.port=8091`:
 | sec.keyStorePassword              | The password for the keystore file.                                                                                                                 | password       | SEC_KEY_STORE_PASSWORD                |
 
 
-## Option 1: Use the ext-signature-svc-mock
+## Option 1: Use the mock-signing-svc
 
-If you're looking to quickly explore/test the behaviors of this service and its API, then you may want to use the ext-signature-svc-mock.
-Usage and configuration information can be found in that [subproject's readme](../ext-signature-svc-mock/README.md)
+If you're looking to quickly explore/test the behaviors of this service and its API, then you may want to use the mock-signing-svc.
+Usage and configuration information can be found in that [subproject's readme](../mock-signing-svc/README.md)
 
 ## Option 2: Configure a local instance with MTLS authentication
 
