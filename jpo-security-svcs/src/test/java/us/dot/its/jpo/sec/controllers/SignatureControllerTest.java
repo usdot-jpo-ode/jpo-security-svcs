@@ -15,7 +15,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-import us.dot.its.jpo.sec.helpers.*;
+import us.dot.its.jpo.sec.helpers.HttpClientFactory;
+import us.dot.its.jpo.sec.helpers.HttpEntityStringifier;
+import us.dot.its.jpo.sec.helpers.KeyStoreReader;
+import us.dot.its.jpo.sec.helpers.RestTemplateFactory;
+import us.dot.its.jpo.sec.helpers.SSLContextFactory;
 import us.dot.its.jpo.sec.models.Message;
 
 import javax.net.ssl.SSLContext;
@@ -28,7 +32,9 @@ import java.security.UnrecoverableKeyException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 class SignatureControllerTest {

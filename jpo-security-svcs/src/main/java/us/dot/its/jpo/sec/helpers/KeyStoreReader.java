@@ -1,12 +1,14 @@
 package us.dot.its.jpo.sec.helpers;
 
-import java.io.*;
+import org.springframework.stereotype.Component;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-
-import org.springframework.stereotype.Component;
 
 @Component
 public class KeyStoreReader {
