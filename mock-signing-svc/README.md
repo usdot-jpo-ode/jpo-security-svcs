@@ -1,8 +1,8 @@
-# ext-signature-svc-mock
+# mock-signing-svc
 
 ## Overview
 
-The **ext-signature-svc-mock** is a Spring Boot-based mock service designed to simulate signature-related functionalities. 
+The **mock-signing-svc** is a Spring Boot-based mock service designed to simulate signature-related functionalities. 
 It can be used for testing and development purposes in environments where an external signature service is required 
 but unavailable or not ready for integration.
 
@@ -48,13 +48,13 @@ This will generate a runnable `.jar` file under the `target` directory.
 Run the application from the terminal using `java`:
 
 ```bash
-java -jar target/ext-signature-svc-mock.jar
+java -jar target/mock-signing-svc.jar
 ```
 
 By default, the application runs on port `8091`. You can configure the port using the `application.yaml` file or pass it as a command-line argument:
 
 ```bash
-java -jar target/ext-signature-svc-mock.jar --server.port=9090
+java -jar target/mock-signing-svc.jar --server.port=9090
 ```
 
 ---
@@ -65,7 +65,7 @@ After starting the service, you can access its endpoints. Here is an example of 
 
 - **API Base URL:** `http://localhost:8091/`
 - **Sample Endpoint:**
-    - `/signature/mock` - Simulates a mock response for signature-related requests.
+    - `/mock-signer/sign` - Simulates a mock response for signature-related requests.
 
 ### Step 4: Stop the Application
 
@@ -85,7 +85,7 @@ You can override default properties using environment variables defined in a `.e
 Or provide them directly when running the application:
 
 ```bash
-java -jar target/ext-signature-svc-mock.jar --server.port=9090
+java -jar target/mock-signing-svc.jar --server.port=9090
 ```
 
 ---
@@ -99,7 +99,7 @@ The application can be containerized and run using Docker. A `Dockerfile` is pro
 Run the following command to build the Docker image:
 
 ```bash
-docker build -t ext-signature-svc-mock .
+docker build -t mock-signing-svc .
 ```
 
 ### Run Docker Container
@@ -107,7 +107,7 @@ docker build -t ext-signature-svc-mock .
 Run the container with the following command:
 
 ```bash
-docker run -p 8091:8091 ext-signature-svc-mock
+docker run -p 8091:8091 mock-signing-svc
 ```
 
 ---
@@ -119,7 +119,7 @@ docker run -p 8091:8091 ext-signature-svc-mock
 The project follows the standard Spring Boot directory structure:
 
 ```plaintext
-ext-signature-svc-mock/
+mock-signing-svc/
 ├── src/
 │   ├── main/
 │   │   ├── java/           # Application source code
@@ -143,28 +143,3 @@ ext-signature-svc-mock/
     - Define the properties using environment variables in your `.env` (use the sample stored in the parent directory [here](../sample.env)) file.
 
 ---
-
-## Contributing
-
-If you'd like to contribute to this project:
-
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/your-feature-name`).
-3. Commit your changes (`git commit -am "Add feature"`).
-4. Push to the branch (`git push origin feature/your-feature-name`).
-5. Open a pull request for review.
-
----
-
-## License
-
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
-
----
-
-## Contact
-
-For questions or support:
-
-- **Email:** [your-email@example.com](mailto:your-email@example.com)
-- **Issue Tracker:** Open an issue in the GitHub repository.

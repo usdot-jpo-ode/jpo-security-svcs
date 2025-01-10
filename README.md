@@ -7,12 +7,12 @@ for the [jpo-ode](https://github.com/usdot-jpo-ode/jpo-ode).
 
 The three main directories and components in this repository are:
 
-1. **security-svc**:
+1. **jpo-security-svcs**:
     - This is the core service of the suite and provides actual security-related functionalities.
     - The goal of this application is to offer secure operations like managing authentication, authorization, and other
       core security-related tasks.
 
-2. **ext-signature-svc-mock**:
+2. **mock-signing-svc**:
     - A mock service that simulates signature-related operations during development and testing.
     - It is used for scenarios where an external signature service is required but either unavailable or unnecessary for
       local testing.
@@ -44,25 +44,25 @@ Ensure you have the following tools installed and configured on your machine:
 Make a copy of the contents of the [`sample.env`](sample.env) file and paste them into a file named `.env`.
 Populate the relevant environment variables following the instructions in the comments.
 
-### 2. **Running `security-svc`**
+### 2. **Running `jpo-security-svcs`**
 
-The `security-svc` directory contains the main security service. Follow these steps to build and run it:
+The `jpo-security-svcs` directory contains the main security service. Follow these steps to build and run it:
 
 #### Build the Application
 
-Navigate to the `security-svc` directory and build the project:
+Navigate to the `jpo-security-svcs` directory and build the project:
 
 ```bash
-cd security-svc
+cd jpo-security-svcs
 mvn clean package
 ```
 
 #### Run the Application
 
-Run the `security-svc` application:
+Run the `jpo-security-svcs` application:
 
 ```bash
-java -jar target/security-svc.jar
+java -jar target/jpo-security-svcs.jar
 ```
 
 By default, this service runs on `http://localhost:8090`. You can change the port using the `application.properties`
@@ -70,28 +70,28 @@ file or through environment variables.
 
 ---
 
-### 3. **Running `ext-signature-svc-mock`**
+### 3. **Running `mock-signing-svc`**
 
-The `ext-signature-svc-mock` simulates the external signature service. Follow these steps to build and run it:
+The `mock-signing-svc` simulates the external signature service. Follow these steps to build and run it:
 
 #### Build the Mock Application
 
-Navigate to the `ext-signature-svc-mock` directory and build the mock service:
+Navigate to the `mock-signing-svc` directory and build the mock service:
 
 ```bash
-cd ../ext-signature-svc-mock
+cd mock-signing-svc
 mvn clean package
 ```
 
 #### Run the Mock Service
 
-Run `ext-signature-svc-mock`:
+Run `mock-signing-svc`:
 
 ```bash
-java -jar target/ext-signature-svc-mock.jar
+java -jar target/mock-signing-svc.jar
 ```
 
-By default, this service runs on `http://localhost:9090`. You can update the port similarly using
+By default, this service runs on `http://localhost:8091`. You can update the port similarly using
 `application.properties` or environment variables.
 
 ---
@@ -101,7 +101,7 @@ By default, this service runs on `http://localhost:9090`. You can update the por
 Once both applications are running:
 
 1. You can use tools like **Postman** or **cURL** to send requests to the services.
-2. The `security-svc` will rely on `ext-signature-svc-mock` for signature-related operations when performing
+2. The `jpo-security-svcs` will rely on `mock-signing-svc` for signature-related operations when performing
    security-related validations in testing environments.
 
 ---
@@ -111,7 +111,7 @@ Once both applications are running:
 If you want to run the applications in Docker containers, you can use the provided `Dockerfile` in each subdirectory or
 the docker-compose.yaml file in the root directory (this directory).
 
-### Building and Running `security-svc` with `ext-signature-svc-mock` using docker-compose
+### Building and Running `jpo-security-svcs` with `mock-signing-svc` using docker-compose
 
 From this directory:
 
@@ -119,26 +119,26 @@ From this directory:
 docker-compose --profile local up --build -d
 ```
 
-### Building and Running `security-svc` with Docker
+### Building and Running `jpo-security-svcs` with Docker
 
-From the root of the `security-svc` directory:
+From the root of the `jpo-security-svcs` directory:
 
 ```bash
 # Build image
-docker build -t security-svc .
+docker build -t jpo-security-svcs .
 
 # Run container
-docker run -p 8080:8080 security-svc
+docker run -p 8080:8080 jpo-security-svcs
 ```
 
-### Building and Running `ext-signature-svc-mock` with Docker
+### Building and Running `mock-signing-svc` with Docker
 
-From the root of the `ext-signature-svc-mock` directory:
+From the root of the `mock-signing-svc` directory:
 
 ```bash
 # Build image
-docker build -t ext-signature-svc-mock .
+docker build -t mock-signing-svc .
 
 # Run container
-docker run -p 9090:9090 ext-signature-svc-mock
+docker run -p 9090:9090 mock-signing-svc
 ```

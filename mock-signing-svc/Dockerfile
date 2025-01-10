@@ -8,5 +8,5 @@ RUN mvn clean package
 
 FROM eclipse-temurin:21-jre-alpine
 
-COPY --from=builder /home/target/mock-signer.jar /home
-ENTRYPOINT ["java","-jar","/home/mock-signer.jar"]
+COPY --from=builder /home/target/mock-signing-svc.jar /home
+ENTRYPOINT ["java","-jar","/home/mock-signing-svc.jar"]

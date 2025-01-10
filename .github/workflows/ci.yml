@@ -20,7 +20,7 @@ jobs:
         maven-version: 3.8.2              
      - name: Build 
        run: |
-         cd $GITHUB_WORKSPACE/security-svc
+         cd $GITHUB_WORKSPACE/jpo-security-svcs
          ls -ls && pwd
          mvn -e -X clean org.jacoco:jacoco-maven-plugin:prepare-agent package
          mvn -e -X clean org.jacoco:jacoco-maven-plugin:report package
@@ -28,16 +28,16 @@ jobs:
        uses: actions/upload-artifact@v4
        with:
          name: jpo-security-svcs
-         path: /__w/jpo-security-svcs/jpo-security-svcs/security-svc/target 
+         path: /__w/jpo-security-svcs/jpo-security-svcs/jpo-security-svcs/target
          if-no-files-found: error
-  ext-signature-svc-mock:
+  mock-signing-svc:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout ${{ github.event.repository.name }}
         uses: actions/checkout@v4
       - name: Build
         run: |
-          cd $GITHUB_WORKSPACE/ext-signature-svc-mock
+          cd $GITHUB_WORKSPACE/mock-signing-svc
           ls -ls && pwd
           ./mvnw -e  clean package
   tmca-tester:
@@ -54,7 +54,7 @@ jobs:
          npm install --force
          node ./tmca-tester.js  
   sonar:
-    needs: [jpo-security-svcs, tmca-tester, ext-signature-svc-mock]
+    needs: [jpo-security-svcs, tmca-tester, mock-signing-svc]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout ${{ github.event.repository.name }}

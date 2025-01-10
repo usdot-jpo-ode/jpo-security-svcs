@@ -23,5 +23,5 @@ jobs:
             cd - > /dev/null
           }
           
-          build_service "security-svc"
-          build_service "ext-signature-svc-mock"
+          build_service "jpo-security-svcs"
+          build_service "mock-signing-svc"
