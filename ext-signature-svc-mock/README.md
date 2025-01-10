@@ -65,7 +65,7 @@ After starting the service, you can access its endpoints. Here is an example of 
 
 - **API Base URL:** `http://localhost:8091/`
 - **Sample Endpoint:**
-    - `/signature/mock` - Simulates a mock response for signature-related requests.
+    - `/mock-signer/sign` - Simulates a mock response for signature-related requests.
 
 ### Step 4: Stop the Application
 
@@ -143,28 +143,3 @@ ext-signature-svc-mock/
     - Define the properties using environment variables in your `.env` (use the sample stored in the parent directory [here](../sample.env)) file.
 
 ---
-
-## Contributing
-
-If you'd like to contribute to this project:
-
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/your-feature-name`).
-3. Commit your changes (`git commit -am "Add feature"`).
-4. Push to the branch (`git push origin feature/your-feature-name`).
-5. Open a pull request for review.
-
----
-
-## License
-
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
-
----
-
-## Contact
-
-For questions or support:
-
-- **Email:** [your-email@example.com](mailto:your-email@example.com)
-- **Issue Tracker:** Open an issue in the GitHub repository.
