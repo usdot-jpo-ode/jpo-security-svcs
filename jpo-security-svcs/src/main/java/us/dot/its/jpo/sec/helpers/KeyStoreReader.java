@@ -15,7 +15,7 @@ public class KeyStoreReader {
     
    public KeyStore readStore(String keyStorePath, String keyStorePassword)
            throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException {
-      try (InputStream keyStoreStream = new FileInputStream(new File(keyStorePath))) {
+      try (InputStream keyStoreStream = new FileInputStream(keyStorePath)) {
          KeyStore keyStore = KeyStore.getInstance("JKS");
          keyStore.load(keyStoreStream, keyStorePassword.toCharArray());
          return keyStore;
