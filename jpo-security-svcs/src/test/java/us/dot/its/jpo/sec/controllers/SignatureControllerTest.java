@@ -1,30 +1,13 @@
 package us.dot.its.jpo.sec.controllers;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import mockit.Injectable;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.util.Map;
-
-import javax.net.ssl.SSLContext;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -32,8 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-
-import mockit.Injectable;
 import us.dot.its.jpo.sec.helpers.HttpClientFactory;
 import us.dot.its.jpo.sec.helpers.HttpEntityStringifier;
 import us.dot.its.jpo.sec.helpers.KeyStoreReader;
@@ -41,11 +22,22 @@ import us.dot.its.jpo.sec.helpers.RestTemplateFactory;
 import us.dot.its.jpo.sec.helpers.SSLContextFactory;
 import us.dot.its.jpo.sec.models.Message;
 
-@ExtendWith(MockitoExtension.class)
-public class SignatureControllerTest {
-    @Mock
-    protected RestTemplate mockRestTemplate;
+import javax.net.ssl.SSLContext;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+
+@ExtendWith(MockitoExtension.class)
+class SignatureControllerTest {
     @Mock
     protected RestTemplateFactory mockRestTemplateFactory;
 
@@ -65,23 +57,22 @@ public class SignatureControllerTest {
     Environment environment;
 
     @InjectMocks
-    SignatureController uut = new SignatureController();
+    SignatureController uut;
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     public void setUp() {
-        mockRestTemplate = mock(RestTemplate.class);
         mockRestTemplateFactory = mock(RestTemplateFactory.class);
-        doReturn(mockRestTemplate).when(mockRestTemplateFactory).getRestTemplate();
         mockKeyStoreReader = mock(KeyStoreReader.class);
         mockSSLContextFactory = mock(SSLContextFactory.class);
         mockHttpClientFactory = mock(HttpClientFactory.class);
         mockHttpEntityStringifier = mock(HttpEntityStringifier.class);
-        uut.injectBaseDependencies(environment, mockRestTemplateFactory, mockKeyStoreReader, 
+        uut = new SignatureController(environment, mockRestTemplateFactory, mockKeyStoreReader,
                 mockSSLContextFactory, mockHttpClientFactory, mockHttpEntityStringifier);
     }
 
     @Test
-    public void testSign_SUCCESS() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, ClientProtocolException, IOException {
+    void testSign_SUCCESS() throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, IOException, SignatureControllerException {
         // prepare
         setUp();
         uut.setUseCertificates(true);
@@ -100,15 +91,15 @@ public class SignatureControllerTest {
         message.setMsg("test");
 
         // execute
-        ResponseEntity<Map<String, String>> response = uut.sign(message);
+        var response = uut.sign(message);
 
         // verify
         assertEquals(org.springframework.http.HttpStatus.OK, response.getStatusCode());
-        assertEquals("{\"message-expiry\":\"1\",\"message-signed\":\"test12345\"}", response.getBody().get("result"));
+        assertEquals("{\"messageExpiry\":\"1\",\"messageSigned\":\"test12345\"}", objectMapper.writeValueAsString(response.getBody()));
     }
 
     @Test
-    public void testSign_ERROR_NoResponse() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
+    void testSign_ERROR_NoResponse() throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
         // prepare
         setUp();
         uut.setUseCertificates(true);
@@ -119,62 +110,46 @@ public class SignatureControllerTest {
         message.setMsg("test");
 
         // execute
-        ResponseEntity<Map<String, String>> response = uut.sign(message);
-
-        // verify
-        assertEquals(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("Error communicating with external service", response.getBody().get("error"));
+        assertThrows(SignatureControllerException.class , () -> uut.sign(message));
     }
 
     @Test
-    public void testSign_CryptoServiceBaseUriNotSet() throws URISyntaxException {
+    void testSign_CryptoServiceBaseUriNotSet() {
         // prepare
         setUp();
         uut.setCryptoServiceBaseUri(null);
         uut.setCryptoServiceEndpointSignPath("endpoint");
         Message message = new Message();
         message.setMsg("test");
-        String expectedWarnString = "Properties sec.cryptoServiceBaseUri=null, sec.cryptoServiceEndpointSignPath=endpoint Not defined. Returning the message unchanged.";
 
-        // execute
-        ResponseEntity<Map<String, String>> response = uut.sign(message);
-
-        // verify
-        assertEquals(org.springframework.http.HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertEquals(message.getMsg(), response.getBody().get("result"));
-        assertEquals(expectedWarnString, response.getBody().get("warn"));
+        assertThrows(SignatureControllerException.class , () -> uut.sign(message));
     }
 
     @Test
-    public void testSign_CryptoServiceEndpointSignPathNotSet() throws URISyntaxException {
+    void testSign_CryptoServiceEndpointSignPathNotSet() {
         // prepare
         setUp();
         uut.setCryptoServiceBaseUri("http://example.com/");
         uut.setCryptoServiceEndpointSignPath(null);
         Message message = new Message();
         message.setMsg("test");
-        String expectedWarnString = "Properties sec.cryptoServiceBaseUri=http://example.com, sec.cryptoServiceEndpointSignPath=null Not defined. Returning the message unchanged.";
 
         // execute
-        ResponseEntity<Map<String, String>> response = uut.sign(message);
-
-        // verify
-        assertEquals(org.springframework.http.HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertEquals(message.getMsg(), response.getBody().get("result"));
-        assertEquals(expectedWarnString, response.getBody().get("warn"));
+        assertThrows(SignatureControllerException.class, () -> uut.sign(message));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void testForwardMessageToExternalService_useCertificates_False() throws URISyntaxException, JSONException {
+    void testForwardMessageToExternalService_useCertificates_False() throws JSONException, SignatureControllerException {
         // prepare
         setUp();
         uut.setUseCertificates(false);
         uut.setCryptoServiceBaseUri("http://example.com/");
         uut.setCryptoServiceEndpointSignPath("endpoint");
-        ResponseEntity<Map<String, String>> mockResponseEntity = mock(ResponseEntity.class);
+        var mockResponseEntity = mock(ResponseEntity.class);
         doReturn("{\"result\":\"test\"}").when(mockResponseEntity).getBody();
-        doReturn(mockResponseEntity).when(mockRestTemplate).postForEntity(any(), any(), any());
+        var mockTemplate = mock(RestTemplate.class);
+        doReturn(mockTemplate).when(mockRestTemplateFactory).getRestTemplate();
+        doReturn(mockResponseEntity).when(mockTemplate).postForEntity(any(), any(), any());
         Message message = new Message();
         message.setMsg("test");
 
@@ -186,7 +161,7 @@ public class SignatureControllerTest {
     }
 
     @Test
-    public void testForwardMessageToExternalService_useCertificates_True_SUCCESS() throws URISyntaxException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, ClientProtocolException, IOException, JSONException {
+    void testForwardMessageToExternalService_useCertificates_True_SUCCESS() throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, IOException, JSONException, SignatureControllerException {
         // prepare
         setUp();
         uut.setUseCertificates(true);
@@ -212,7 +187,7 @@ public class SignatureControllerTest {
     }
 
     @Test
-    public void testForwardMessageToExternalService_useCertificates_True_ERROR() throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, URISyntaxException {
+    void testForwardMessageToExternalService_useCertificates_True_ERROR() throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
         // prepare
         setUp();
         uut.setUseCertificates(true);
@@ -223,14 +198,11 @@ public class SignatureControllerTest {
         message.setMsg("test");
 
         // execute
-        JSONObject response = uut.forwardMessageToExternalService(message);
-
-        // verify
-        assertNull(response);
+        assertThrows(SignatureControllerException.class,  () -> uut.forwardMessageToExternalService(message));
     }
 
     @Test
-    public void testForwardMessageToExternalService_useCertificates_True_FailureToCreateHttpContext() throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, ClientProtocolException, IOException, URISyntaxException {
+    void testForwardMessageToExternalService_useCertificates_True_FailureToCreateHttpContext() throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
         // prepare
         setUp();
         uut.setUseCertificates(true);
@@ -243,14 +215,11 @@ public class SignatureControllerTest {
         message.setMsg("test");
 
         // execute
-        JSONObject response = uut.forwardMessageToExternalService(message);
-
-        // verify
-        assertNull(response);
+        assertThrows(SignatureControllerException.class,  () -> uut.forwardMessageToExternalService(message));
     }
 
     @Test
-    public void testTrimBaseUriAndEndpointPath_TrailingSlashInUri() {
+    void testTrimBaseUriAndEndpointPath_TrailingSlashInUri() {
         // prepare
         setUp();
         String baseUri = "http://example.com/";
@@ -268,7 +237,7 @@ public class SignatureControllerTest {
     }
 
     @Test
-    public void testTrimBaseUriAndEndpointPath_PrecedingSlashInPath() {
+    void testTrimBaseUriAndEndpointPath_PrecedingSlashInPath() {
         // prepare
         setUp();
         String baseUri = "http://example.com";

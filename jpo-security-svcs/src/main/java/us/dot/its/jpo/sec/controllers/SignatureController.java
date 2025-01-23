@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2018 572682
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License.  You may obtain a copy
  * of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
@@ -15,22 +15,7 @@
  ******************************************************************************/
 package us.dot.its.jpo.sec.controllers;
 
-import us.dot.its.jpo.sec.helpers.HttpClientFactory;
-import us.dot.its.jpo.sec.helpers.HttpEntityStringifier;
-import us.dot.its.jpo.sec.helpers.KeyStoreReader;
-import us.dot.its.jpo.sec.helpers.RestTemplateFactory;
-import us.dot.its.jpo.sec.helpers.SSLContextFactory;
-import us.dot.its.jpo.sec.models.Message;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.KeyStore;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.net.ssl.SSLContext;
-
+import joptsimple.internal.Strings;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -49,12 +34,32 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+import us.dot.its.jpo.sec.helpers.HttpClientFactory;
+import us.dot.its.jpo.sec.helpers.HttpEntityStringifier;
+import us.dot.its.jpo.sec.helpers.KeyStoreReader;
+import us.dot.its.jpo.sec.helpers.RestTemplateFactory;
+import us.dot.its.jpo.sec.helpers.SSLContextFactory;
+import us.dot.its.jpo.sec.models.Message;
+import us.dot.its.jpo.sec.models.SignatureResponse;
+
+import javax.net.ssl.SSLContext;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @ConfigurationProperties("sec")
@@ -62,215 +67,216 @@ import org.springframework.web.client.RestTemplate;
 @RestController
 public class SignatureController implements EnvironmentAware {
 
-   @Autowired
-   private Environment env;
+    private Environment env;
+    private final RestTemplateFactory restTemplateFactory;
+    private final KeyStoreReader keyStoreReader;
+    private final SSLContextFactory sslContextFactory;
+    private final HttpClientFactory httpClientFactory;
+    private final HttpEntityStringifier httpEntityStringifier;
 
-   @Autowired
-   private RestTemplateFactory restTemplateFactory;
+    public String cryptoServiceBaseUri;
+    private String cryptoServiceEndpointSignPath;
 
-   @Autowired
-   private KeyStoreReader keyStoreReader;
+    private boolean useCertificates;
+    private String keyStorePath;
+    private String keyStorePassword;
 
-   @Autowired
-   private SSLContextFactory sslContextFactory;
+    private static final Logger logger = LoggerFactory.getLogger(SignatureController.class);
 
-   @Autowired
-   private HttpClientFactory httpClientFactory;
+    @Autowired
+    public SignatureController(Environment env, RestTemplateFactory restTemplateFactory, KeyStoreReader keyStoreReader,
+                                    SSLContextFactory sslContextFactory, HttpClientFactory httpClientFactory, HttpEntityStringifier httpEntityStringifier) {
+        this.env = env;
+        this.restTemplateFactory = restTemplateFactory;
+        this.keyStoreReader = keyStoreReader;
+        this.sslContextFactory = sslContextFactory;
+        this.httpClientFactory = httpClientFactory;
+        this.httpEntityStringifier = httpEntityStringifier;
+    }
 
-   @Autowired
-   private HttpEntityStringifier httpEntityStringifier;
+    @PostMapping(value = "/sign", produces = "application/json")
+    public ResponseEntity<SignatureResponse> sign(@RequestBody Message message) throws SignatureControllerException {
+        logger.info("Received message: {} with sigValidityOverride: {}", message.getMsg(), message.getSigValidityOverride());
 
-   public String cryptoServiceBaseUri;
-   private String cryptoServiceEndpointSignPath;
+        trimBaseUriAndEndpointPath();
 
-   private boolean useCertificates;
-   private String keyStorePath;
-   private String keyStorePassword;
+        if (Strings.isNullOrEmpty(cryptoServiceBaseUri) || Strings.isNullOrEmpty(cryptoServiceEndpointSignPath)) {
+            // base URI or endpoint path not set, return the message unchanged
+            logger.warn("Properties sec.cryptoServiceBaseUri={}, sec.cryptoServiceEndpointSignPath={} not defined. Cannot sign message.",
+                    cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
 
-   private static final Logger logger = LoggerFactory.getLogger(SignatureController.class);
+            throw new SignatureControllerException("Cannot sign message - signing service not configured.", HttpStatus.NOT_FOUND);
+        }
 
-   @Autowired
-   public void injectBaseDependencies(Environment env, RestTemplateFactory restTemplateFactory, KeyStoreReader keyStoreReader, 
-         SSLContextFactory sslContextFactory, HttpClientFactory httpClientFactory, HttpEntityStringifier httpEntityStringifier) {
-      this.env = env;
-      this.restTemplateFactory = restTemplateFactory;
-      this.keyStoreReader = keyStoreReader;
-      this.sslContextFactory = sslContextFactory;
-      this.httpClientFactory = httpClientFactory;
-      this.httpEntityStringifier = httpEntityStringifier;
-   }
+        logger.info("Sending signature request to external service");
+        JSONObject json = forwardMessageToExternalService(message);
 
-   @RequestMapping(value = "/sign", method = RequestMethod.POST, produces = "application/json")
-   @ResponseBody
-   public ResponseEntity<Map<String, String>> sign(@RequestBody Message message) throws URISyntaxException {
-      logger.info("Received message: {}", message.getMsg());
-      logger.info("Received sigValidityOverride: {}", message.getSigValidityOverride());
+        ResponseEntity<SignatureResponse> response;
+        var signatureResponse = new SignatureResponse();
+        signatureResponse.setMessageSigned(json.getString("message-signed"));
+        try {
+            signatureResponse.setMessageExpiry(String.valueOf(json.getLong("message-expiry")));
+        } catch (Exception e) {
+            signatureResponse.setMessageExpiry("null");
+        }
+        response = ResponseEntity.status(HttpStatus.OK).body(signatureResponse);
 
-      ResponseEntity<Map<String, String>> response;
+        return response;
 
-      trimBaseUriAndEndpointPath();
+    }
 
-      String resultString = message.getMsg();
-      if ((cryptoServiceBaseUri == null || cryptoServiceBaseUri.length() == 0) || (cryptoServiceEndpointSignPath == null || cryptoServiceEndpointSignPath.length() == 0)) {
-         // base URI or endpoint path not set, return the message unchanged
-         String msg = "Properties sec.cryptoServiceBaseUri=" + cryptoServiceBaseUri
-               + ", sec.cryptoServiceEndpointSignPath=" + cryptoServiceEndpointSignPath
-               + " Not defined. Returning the message unchanged.";
-         logger.warn(msg);
-         Map<String, String> result = new HashMap<String, String>();
-         result.put("result", resultString);
-         result.put("warn", msg);
-         response = ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
-         return response;
-      }
+    protected JSONObject forwardMessageToExternalService(Message message) throws SignatureControllerException {
 
-      logger.info("Sending signature request to external service");
-      JSONObject json = forwardMessageToExternalService(message);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, String> map;
 
-      if (json != null) {
-         resultString = json.getString("message-signed");
-         Map<String, String> mapResult = new HashMap<>();
-         try {
+        if (message.getSigValidityOverride() > 0) {
+            map = new HashMap<>();
+            map.put("message", message.getMsg());
+            map.put("sigValidityOverride", Integer.toString(message.getSigValidityOverride()));
+        } else {
+            map = Collections.singletonMap("message", message.getMsg());
+        }
+        HttpEntity<Map<String, String>> entity = new HttpEntity<>(map, headers);
+        RestTemplate template = restTemplateFactory.getRestTemplate();
 
-            mapResult.put("message-expiry", String.valueOf(json.getLong("message-expiry")));
+        logger.debug("Received request: {}", entity);
 
-         } catch (Exception e) {
-            mapResult.put("message-expiry", "null");
-         }
-         mapResult.put("message-signed", resultString);
-         response = ResponseEntity.status(HttpStatus.OK)
-               .body(Collections.singletonMap("result", new JSONObject(mapResult).toString()));
-      } else {
-         // no response from external service
-         response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-               .body(Collections.singletonMap("error", "Error communicating with external service"));
-      }
+        URI uri;
+        try {
+            uri = new URI("%s/%s".formatted(cryptoServiceBaseUri, cryptoServiceEndpointSignPath));
+        } catch (URISyntaxException e) {
+            throw new SignatureControllerException("Invalid signing service configuration - cannot sign message", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
-      return response;
+        logger.debug("Sending request to: {}", uri);
 
-   }
+        if (useCertificates) {
+            KeyStore keyStore;
+            SSLContext sslContext;
+            try {
+                keyStore = keyStoreReader.readStore(keyStorePath, keyStorePassword);
+                sslContext = sslContextFactory.getSSLContext(keyStore, keyStorePassword);
+            } catch (KeyManagementException | UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException |
+                     IOException | CertificateException e) {
+                logger.error("Unable to initialize ssl: {}", e.getMessage(), e);
+                throw new SignatureControllerException("Unable to connect to external signing service", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
 
-   protected JSONObject forwardMessageToExternalService(Message message) throws URISyntaxException {
-
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_JSON);
-      Map<String, String> map;
-
-      if (message.getSigValidityOverride() > 0) {
-         map = new HashMap<>();
-         map.put("message", message.getMsg());
-         map.put("sigValidityOverride", Integer.toString(message.getSigValidityOverride()));
-      } else {
-         map = Collections.singletonMap("message", message.getMsg());
-      }
-      HttpEntity<Map<String, String>> entity = new HttpEntity<>(map, headers);
-      RestTemplate template = restTemplateFactory.getRestTemplate();
-
-      logger.debug("Received request: {}", entity);
-
-      URI uri = new URI(cryptoServiceBaseUri + "/" + cryptoServiceEndpointSignPath);
-
-      logger.debug("Sending request to: {}", uri);
-
-      if (useCertificates) {
-         try {
-            KeyStore keyStore = keyStoreReader.readStore(keyStorePath, keyStorePassword);
-            SSLContext sslContext = sslContextFactory.getSSLContext(keyStore, keyStorePassword);
             HttpClient httpClient = httpClientFactory.getHttpClient(sslContext);
             if (httpClient == null) {
-               logger.error("Error creating HttpClient");
-               return null;
+                throw new SignatureControllerException("Unable to connect to external signing service", HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
             HttpPost httpPost = new HttpPost(uri);
             httpPost.setHeader("Content-Type", "application/json");
-            org.apache.http.HttpEntity entity2 = new org.apache.http.entity.StringEntity(new JSONObject(map).toString());
-            httpPost.setEntity(entity2);
+            org.apache.http.HttpEntity postEntity;
+            try {
+                postEntity = new org.apache.http.entity.StringEntity(new JSONObject(map).toString());
+            } catch (UnsupportedEncodingException e) {
+                throw new SignatureControllerException("Invalid request body.", HttpStatus.BAD_REQUEST);
+            }
+            httpPost.setEntity(postEntity);
 
-            HttpResponse response = httpClient.execute(httpPost);
-            org.apache.http.HttpEntity apache_entity = response.getEntity();
-            String result = httpEntityStringifier.stringifyHttpEntity(apache_entity);
+            HttpResponse response;
+            try {
+                response = httpClient.execute(httpPost);
+            } catch (IOException e) {
+                logger.error("Unable to execute http request: {}", e.getMessage(), e);
+                throw new SignatureControllerException("Unable to sign message.", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            org.apache.http.HttpEntity responseEntity = response.getEntity();
+            String result;
+            try {
+                result = httpEntityStringifier.stringifyHttpEntity(responseEntity);
+            } catch (IOException e) {
+                logger.error("Unable to read response from external signing service: {}", e.getMessage(), e);
+                throw new SignatureControllerException("Unable to read response from external signing service", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
             logger.debug("Returned signature object: {}", result);
-            JSONObject jObj = new JSONObject(result);
-            EntityUtils.consume(apache_entity);
-            return jObj;
 
-         } catch (Exception e) {
-            logger.error("Error creating SSLContext", e);
-            return null;
-         }
-      } else {
+            try {
+                EntityUtils.consume(responseEntity);
+            } catch (IOException e) {
+                logger.error("Unable to consume response from external signing service: {}", e.getMessage(), e);
+                throw new SignatureControllerException("Unable to consume response from external signing service", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
 
-         ResponseEntity<String> respEntity = template.postForEntity(uri, entity, String.class);
-         logger.debug("Received response: {}", respEntity);
+            return new JSONObject(result);
+        } else {
+            ResponseEntity<String> respEntity = template.postForEntity(uri, entity, String.class);
+            logger.debug("Received response: {}", respEntity);
 
-         return new JSONObject(respEntity.getBody());
-      }
-   }
+            return new JSONObject(respEntity.getBody());
+        }
+    }
 
-   protected void trimBaseUriAndEndpointPath() {
-      logger.debug("Before trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
-      // Remove all slashes from the end of the URI, if any
-      while (cryptoServiceBaseUri != null && cryptoServiceBaseUri.endsWith("/")) {
-         cryptoServiceBaseUri = cryptoServiceBaseUri.substring(0, cryptoServiceBaseUri.lastIndexOf('/'));
-      }
-      // Remove all slashes from the beginning of the path string, if any
-      while (cryptoServiceEndpointSignPath != null && cryptoServiceEndpointSignPath.startsWith("/")) {
-         cryptoServiceEndpointSignPath = cryptoServiceEndpointSignPath.substring(1);
-      }
-      logger.debug("After Trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
-   }
+    protected void trimBaseUriAndEndpointPath() {
+        logger.debug("Before trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
+        // Remove all slashes from the end of the URI, if any
+        while (cryptoServiceBaseUri != null && cryptoServiceBaseUri.endsWith("/")) {
+            cryptoServiceBaseUri = cryptoServiceBaseUri.substring(0, cryptoServiceBaseUri.lastIndexOf('/'));
+        }
+        // Remove all slashes from the beginning of the path string, if any
+        while (cryptoServiceEndpointSignPath != null && cryptoServiceEndpointSignPath.startsWith("/")) {
+            cryptoServiceEndpointSignPath = cryptoServiceEndpointSignPath.substring(1);
+        }
+        logger.debug("After Trimming: cryptoServiceBaseUri={}, cryptoServiceEndpointSignPath={}", cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
+    }
 
-   @Override
-   public void setEnvironment(Environment env) {
-      this.env = env;
-   }
+    @Override
+    public void setEnvironment(Environment env) {
+        this.env = env;
+    }
 
-   public Environment getEnv() {
-      return env;
-   }
+    public Environment getEnv() {
+        return env;
+    }
 
-   public void setEnv(Environment env) {
-      this.env = env;
-   }
+    public void setEnv(Environment env) {
+        this.env = env;
+    }
 
-   public String getCryptoServiceBaseUri() {
-      return cryptoServiceBaseUri;
-   }
+    public String getCryptoServiceBaseUri() {
+        return cryptoServiceBaseUri;
+    }
 
-   public void setCryptoServiceBaseUri(String cryptoServiceBaseUri) {
-      this.cryptoServiceBaseUri = cryptoServiceBaseUri;
-   }
+    public void setCryptoServiceBaseUri(String cryptoServiceBaseUri) {
+        this.cryptoServiceBaseUri = cryptoServiceBaseUri;
+    }
 
-   public String getCryptoServiceEndpointSignPath() {
-      return cryptoServiceEndpointSignPath;
-   }
+    public String getCryptoServiceEndpointSignPath() {
+        return cryptoServiceEndpointSignPath;
+    }
 
-   public void setCryptoServiceEndpointSignPath(String cryptoServiceEndpointSignPath) {
-      this.cryptoServiceEndpointSignPath = cryptoServiceEndpointSignPath;
-   }
+    public void setCryptoServiceEndpointSignPath(String cryptoServiceEndpointSignPath) {
+        this.cryptoServiceEndpointSignPath = cryptoServiceEndpointSignPath;
+    }
 
-   public boolean isUseCertificates() {
-      return useCertificates;
-   }
+    public boolean isUseCertificates() {
+        return useCertificates;
+    }
 
-   public void setUseCertificates(boolean useCertificates) {
-      this.useCertificates = useCertificates;
-   }
+    public void setUseCertificates(boolean useCertificates) {
+        this.useCertificates = useCertificates;
+    }
 
-   public String getKeyStorePath() {
-      return keyStorePath;
-   }
+    public String getKeyStorePath() {
+        return keyStorePath;
+    }
 
-   public void setKeyStorePath(String keyStorePath) {
-      this.keyStorePath = keyStorePath;
-   }
+    public void setKeyStorePath(String keyStorePath) {
+        this.keyStorePath = keyStorePath;
+    }
 
-   public String getKeyStorePassword() {
-      return keyStorePassword;
-   }
+    public String getKeyStorePassword() {
+        return keyStorePassword;
+    }
 
-   public void setKeyStorePassword(String keyStorePassword) {
-      this.keyStorePassword = keyStorePassword;
-   }
+    public void setKeyStorePassword(String keyStorePassword) {
+        this.keyStorePassword = keyStorePassword;
+    }
 }
