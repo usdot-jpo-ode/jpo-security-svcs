@@ -20,6 +20,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -196,7 +197,11 @@ public class SignatureController implements EnvironmentAware {
                 throw new SignatureControllerException("Unable to read response from external signing service", HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
-            logger.debug("Returned signature object: {}", result);
+            logger.debug("Raw response from the external service: >>>{}<<<", result);
+            if (result == null || result.trim().isEmpty()) {
+                logger.error("Empty or null response received from the external signing service.");
+                throw new SignatureControllerException("External service returned empty or null response", HttpStatus.BAD_GATEWAY);
+            }
 
             try {
                 EntityUtils.consume(responseEntity);
@@ -205,7 +210,14 @@ public class SignatureController implements EnvironmentAware {
                 throw new SignatureControllerException("Unable to consume response from external signing service", HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
-            return new JSONObject(result);
+            result = result.trim();
+            try {
+                return new JSONObject(result);
+            } catch (JSONException e) {
+                logger.error("Invalid JSON response", e);
+                throw new SignatureControllerException("External service returned invalid JSON", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
         } else {
             ResponseEntity<String> respEntity = template.postForEntity(uri, entity, String.class);
             logger.debug("Received response: {}", respEntity);
