@@ -214,7 +214,7 @@ public class SignatureController implements EnvironmentAware {
             try {
                 return new JSONObject(result);
             } catch (JSONException e) {
-                logger.error("Invalid JSON response: [{}]", result, e);
+                logger.error("Invalid JSON response", e);
                 throw new SignatureControllerException("External service returned invalid JSON", HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
