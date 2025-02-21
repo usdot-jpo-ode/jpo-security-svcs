@@ -11,6 +11,9 @@ services:
       SEC_USE_CERTIFICATES: ${SEC_USE_CERTIFICATES}
       #SEC_KEY_STORE_PATH: ${SEC_KEY_STORE_PATH}
       SEC_KEY_STORE_PASSWORD: ${SEC_KEY_STORE_PASSWORD}
+      LOG_SPRING_WEB_LEVEL: ${LOG_SPRING_WEB_LEVEL}
+      LOG_SEC_LEVEL: ${LOG_SEC_LEVEL}
+      LOG_ROOT_LEVEL: ${LOG_ROOT_LEVEL}
     volumes: 
       - ./jpo-security-svcs/src/main/resources/creds:/usr/local/share/ca-certificates
       - ./jpo-security-svcs/src/main/resources/cert.jks:/home/cert.jks
