@@ -17,7 +17,6 @@ The latest image can be pulled using the following command:
 The following should get mounted when running the container:
 - creds/
 - cert.jks
-- logback.xml
 
 ## Direct Dependencies
 None
@@ -41,8 +40,7 @@ services:
     volumes: 
       - ./creds:/usr/local/share/ca-certificates
       - ./cert.jks:/home/cert.jks
-      - ./logback.xml:/home/logback.xml
-    command: sh -c "update-ca-certificates && java -Dlogback.configurationFile=/home/logback.xml -jar /home/jpo-security-svcs.jar"
+    command: sh -c "update-ca-certificates && java -jar /home/jpo-security-svcs.jar"
     logging:
       options:
         max-size: "10m"  

@@ -17,7 +17,6 @@ RUN ln -sf /etc/ssl/certs/java/cacerts $JAVA_HOME/lib/security/cacerts
 
 RUN apk add openssl
 
-COPY --from=builder /home/src/main/resources/logback.xml /home
 COPY --from=builder /home/target/jpo-security-svcs.jar /home
 
-CMD ["java", "-Dlogback.configurationFile=/home/logback.xml", "-jar", "/home/jpo-security-svcs.jar"]
+CMD ["java", "-jar", "/home/jpo-security-svcs.jar"]
