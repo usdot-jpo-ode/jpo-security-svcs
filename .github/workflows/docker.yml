@@ -14,4 +14,14 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - run: ls -la && pwd 
       - name: Build
-        uses: docker/build-push-action@v5
+        run: |
+          build_service() {
+            local service_dir=$1
+            echo "Building Docker image for ${service_dir}..."
+            cd ${service_dir}
+            docker buildx build .
+            cd - > /dev/null
+          }
+          
+          build_service "jpo-security-svcs"
+          build_service "mock-signing-svc"
