@@ -15,7 +15,7 @@
  ******************************************************************************/
 package us.dot.its.jpo.sec.controllers;
 
-import joptsimple.internal.Strings;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -35,10 +35,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+
 import us.dot.its.jpo.sec.helpers.HttpClientFactory;
 import us.dot.its.jpo.sec.helpers.HttpEntityStringifier;
 import us.dot.its.jpo.sec.helpers.KeyStoreReader;
@@ -101,7 +103,7 @@ public class SignatureController implements EnvironmentAware {
 
         trimBaseUriAndEndpointPath();
 
-        if (Strings.isNullOrEmpty(cryptoServiceBaseUri) || Strings.isNullOrEmpty(cryptoServiceEndpointSignPath)) {
+        if (!StringUtils.hasText(cryptoServiceBaseUri) || !StringUtils.hasText(cryptoServiceEndpointSignPath)) {
             // base URI or endpoint path not set, return the message unchanged
             logger.warn("Properties sec.cryptoServiceBaseUri={}, sec.cryptoServiceEndpointSignPath={} not defined. Cannot sign message.",
                     cryptoServiceBaseUri, cryptoServiceEndpointSignPath);
