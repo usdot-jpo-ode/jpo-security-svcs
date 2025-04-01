@@ -1,5 +1,4 @@
 /* install Node.js https://nodejs.org/download/release/latest/, add to path, verify operation (node -v)
-/* install node-menu --> npm install node-menu@1.3.2 (don't run fix)
 
 
 /*********************************************************
