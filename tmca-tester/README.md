@@ -21,12 +21,6 @@ As this is a Node.js application, Node.js is required to run it. Download from t
 node -v
 ```
 
-Additionally, this system uses a simple menu which requires install (don't run fix):
-
-```
-npm install node-menu@1.3.2
-```
-
 Certificates are provided by the signing entity. This will be placed under the 'creds' directory and the application requires three files: 
 
 *   'AppTLSCaCert.pem' : the CA cert (from signing authority)
@@ -49,4 +43,4 @@ To run the test application, simply execute:
 node .\tmca-tester.js
 ```
 
-This will launch the application with node-menu as the main entry point. From here, follow the instructions in the console to perform various tests.
+This will launch the application with a readline menu as the main entry point. From here, follow the instructions in the console to perform various tests.
