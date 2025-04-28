@@ -1,6 +1,20 @@
 Jpo-security-svcs Release Notes
 ----------------------------
 
+Version 1.6.0, released June 2025
+----------------------------------------
+### **Summary**
+This release introduces a mock signing service to simplify local development and testing. It also includes bug fixes for returning valid JSON and managing log levels, along with dependency updates to address known vulnerabilities.
+
+Enhancements in this release:
+- [CDOT PR 15](https://github.com/CDOT-CV/jpo-security-svcs/pull/15): Add mock signing service to facilitate easy local development and testing
+- [CDOT PR 16](https://github.com/CDOT-CV/jpo-security-svcs/pull/16): Fix: Return valid JSON from sign endpoint in success and exception cases
+- [CDOT PR 17](https://github.com/CDOT-CV/jpo-security-svcs/pull/17): Mcook42/fix/log levels
+- [CDOT PR 18](https://github.com/CDOT-CV/jpo-security-svcs/pull/18): Fix: JSON Parsing for response from external signing service
+- [CDOT PR 19](https://github.com/CDOT-CV/jpo-security-svcs/pull/19): Set up CI with Azure Pipelines
+- [CDOT PR 20](https://github.com/CDOT-CV/jpo-security-svcs/pull/20): Update Dependency Versions
+
+
 Version 1.5.0, released September 2024
 ----------------------------------------
 ### **Summary**
