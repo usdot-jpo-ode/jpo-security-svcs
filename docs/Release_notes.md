@@ -1,7 +1,7 @@
 Jpo-security-svcs Release Notes
 ----------------------------
 
-Version 1.6.0, released June 2025
+Version 1.6.0, released May 2025
 ----------------------------------------
 ### **Summary**
 This release introduces a mock signing service to simplify local development and testing. It also includes bug fixes for returning valid JSON and managing log levels, along with dependency updates to address known vulnerabilities.
