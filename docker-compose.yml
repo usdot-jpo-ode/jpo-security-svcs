@@ -1,7 +1,7 @@
 version: '3'
 services:
   sec:
-    build: .
+    build: jpo-security-svcs/
     image: jpoode_sec:latest
     ports:
      - "8090:8090"
@@ -11,12 +11,25 @@ services:
       SEC_USE_CERTIFICATES: ${SEC_USE_CERTIFICATES}
       #SEC_KEY_STORE_PATH: ${SEC_KEY_STORE_PATH}
       SEC_KEY_STORE_PASSWORD: ${SEC_KEY_STORE_PASSWORD}
+      LOG_SPRING_WEB_LEVEL: ${LOG_SPRING_WEB_LEVEL}
+      LOG_SEC_LEVEL: ${LOG_SEC_LEVEL}
+      LOG_ROOT_LEVEL: ${LOG_ROOT_LEVEL}
     volumes: 
-      - ./src/main/resources/creds:/usr/local/share/ca-certificates
-      - ./src/main/resources/cert.jks:/home/cert.jks
-      - ./src/main/resources/logback.xml:/home/logback.xml
-    command: sh -c "update-ca-certificates && java -Dlogback.configurationFile=/home/logback.xml -jar /home/jpo-security-svcs.jar"
+      - ./jpo-security-svcs/src/main/resources/creds:/usr/local/share/ca-certificates
+      - ./jpo-security-svcs/src/main/resources/cert.jks:/home/cert.jks
+    command: sh -c "update-ca-certificates && java -jar /home/jpo-security-svcs.jar"
     logging:
       options:
         max-size: "10m"  
+        max-file: "5"
+  mock-signing-svc:
+    build: mock-signing-svc/
+    profiles:
+      - local
+    image: jpoode_sec_mock_signing_svc:latest
+    ports:
+      - "8091:8091"
+    logging:
+      options:
+        max-size: "10m"
         max-file: "5"
