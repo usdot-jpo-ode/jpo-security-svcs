@@ -18,9 +18,9 @@ jobs:
        uses: stCarolas/setup-maven@v4.5
        with:
         maven-version: 3.8.2              
-     - name: Build
+     - name: Build 
        run: |
-         cd $GITHUB_WORKSPACE
+         cd $GITHUB_WORKSPACE/jpo-security-svcs
          ls -ls && pwd
          mvn -e -X clean org.jacoco:jacoco-maven-plugin:prepare-agent package
          mvn -e -X clean org.jacoco:jacoco-maven-plugin:report package
@@ -28,8 +28,24 @@ jobs:
        uses: actions/upload-artifact@v4
        with:
          name: jpo-security-svcs
-         path: /__w/jpo-security-svcs/jpo-security-svcs/target 
+         path: /__w/jpo-security-svcs/jpo-security-svcs/jpo-security-svcs/target
          if-no-files-found: error
+  mock-signing-svc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      - name: Build
+        run: |
+          cd $GITHUB_WORKSPACE/mock-signing-svc
+          ls -ls && pwd
+          ./mvnw -e  clean package
   tmca-tester:
    runs-on: ubuntu-latest
    steps:  
@@ -44,7 +60,7 @@ jobs:
          npm install --force
          node ./tmca-tester.js  
   sonar:
-    needs: [jpo-security-svcs, tmca-tester]
+    needs: [jpo-security-svcs, tmca-tester, mock-signing-svc]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout ${{ github.event.repository.name }}

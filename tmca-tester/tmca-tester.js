@@ -1,5 +1,4 @@
 /* install Node.js https://nodejs.org/download/release/latest/, add to path, verify operation (node -v)
-/* install node-menu --> npm install node-menu@1.3.2 (don't run fix)
 
 
 /*********************************************************
@@ -17,7 +16,7 @@
 
 const fs    = require('fs');
 const https  = require('https');
-var menu  = require('node-menu');
+const readline = require('readline');
 
 // Host name and port
 const hostName = "api.tmca.sunset.issdlm.com"; // Prod TMCA
@@ -229,26 +228,59 @@ function testSignature(signedMessage)
   request.end();
 }
 
-menu.disableDefaultHeader()
-  .addDelimiter('-', 40, 'TMC REST Test Menu')
-  .addItem(
-    'Test sign map message',
-    testSignMap
-  )
-  .addItem(
-    'Test sign tim message',
-    testSignTim
-  )
-  .addItem(
-    'Test sign tim message with validity override (example: 3 3600)',
-    function (overrride) {
-      testSignTimValidityOverride(overrride);
-    },
-    null,
-    [
-      {'name': 'override', 'type': 'numeric'}
-    ]
-  )
-  .addDelimiter('*', 40)
-  .start()
+function mainMenu() {
+  console.log('TMC REST Test Menu');
+  console.log('-'.repeat(40));
+  console.log('1. Test sign map message');
+  console.log('2. Test sign tim message');
+  console.log('3. Test sign tim message with validity override');
+  console.log('4. Exit');
+  
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  rl.question('Select an option (1-4): ', async (answer) => {
+    switch (answer) {
+      case '1':
+        await new Promise((resolve) => {
+          testSignMap();
+          setTimeout(resolve, 2000);
+        });
+        break;
+      case '2':
+        await new Promise((resolve) => {
+          testSignTim();
+          setTimeout(resolve, 2000);
+        });
+        break;
+      case '3':
+        rl.question('Enter validity override (e.g., 3600): ', async (override) => {
+          const overrideValue = parseInt(override, 10);
+          if (overrideValue > 0) {
+            await new Promise((resolve) => {
+              testSignTimValidityOverride(overrideValue);
+              setTimeout(resolve, 2000);
+            });
+          } else {
+            console.log('Invalid input. Please enter a positive number.');
+          }
+          rl.close();
+          mainMenu(); // Loop back to the menu
+        });
+        return;
+      case '4':
+        console.log('Exiting...');
+        rl.close();
+        return;
+      default:
+        console.log('Invalid option. Please try again.');
+    }
+    rl.close();
+    mainMenu(); // Loop back to the menu
+  });
+}
+
+mainMenu();
 

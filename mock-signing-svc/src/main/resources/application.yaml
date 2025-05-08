@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: Mock Signing Service
+logging:
+  level:
+    web: debug
+server:
+  port: 8091

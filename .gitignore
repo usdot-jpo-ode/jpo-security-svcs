@@ -1,4 +1,4 @@
-/target
+**/target
 .project
 .settings
 .classpath
@@ -12,3 +12,4 @@
 **.crt
 .sonar/
 dependency-reduced-pom.xml
+.idea/**
