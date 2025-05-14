@@ -28,5 +28,6 @@ jobs:
       - name: Build
         uses: docker/build-push-action@v5
         with:
+          context: ./jpo-security-svcs
           push: true
           tags: usdotjpoode/jpo-security-svcs:${{ env.TAG }}
