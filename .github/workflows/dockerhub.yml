@@ -6,7 +6,6 @@ on:
       - "develop"
       - "master"
       - "release/*"
-      - "fix_docker_build"
 
 jobs:
   dockerhub-jpo-ode:
