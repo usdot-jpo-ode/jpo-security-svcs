@@ -11,6 +11,8 @@ jobs:
     uses: usdot-jpo-ode/actions/.github/workflows/dockerhub.yml@main
     with:
       image: usdotjpoode/jpo-security-svcs
+      context: jpo-security-svcs
+      file: jpo-security-svcs/Dockerfile
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN:   ${{ secrets.DOCKERHUB_TOKEN }}
