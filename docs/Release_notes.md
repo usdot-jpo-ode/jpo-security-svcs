@@ -1,7 +1,7 @@
 Jpo-security-svcs Release Notes
 ----------------------------
 
-Version 1.7.0, released October 2025
+Version 1.6.1, released October 2025
 ----------------------------------------
 ### **Summary**
 The changes for the jpo-security-svcs v1.6.0 release include adding a workflow for external issues notification and migrating to reusable Docker workflows. No changes were made to the functionality of the service.
