@@ -60,6 +60,7 @@ jobs:
          npm install --force
          node ./tmca-tester.js  
   sonar:
+    if: github.event.pull_request.base.repo.owner.login == 'usdot-jpo-ode'
     needs: [jpo-security-svcs, tmca-tester, mock-signing-svc]
     runs-on: ubuntu-latest
     steps:
