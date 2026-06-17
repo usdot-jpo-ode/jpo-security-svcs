@@ -1,5 +1,6 @@
 name: CI
-on:   
+on:
+  workflow_dispatch:
   pull_request:
     types: [opened, reopened, synchronize]
   push:
@@ -7,36 +8,33 @@ on:
     
 jobs:
   jpo-security-svcs:
-   runs-on: ubuntu-latest
-   container:
-     image: openjdk:21-jdk-slim-buster
-     options: --user root
-   steps:
-     - name: Checkout ${{ github.event.repository.name }}
-       uses: actions/checkout@v4    
-     - name: Set up Maven
-       uses: stCarolas/setup-maven@v4.5
-       with:
-        maven-version: 3.8.2              
-     - name: Build 
-       run: |
-         cd $GITHUB_WORKSPACE/jpo-security-svcs
-         ls -ls && pwd
-         mvn -e -X clean org.jacoco:jacoco-maven-plugin:prepare-agent package
-         mvn -e -X clean org.jacoco:jacoco-maven-plugin:report package
-     - name: Archive code coverage results
-       uses: actions/upload-artifact@v4
-       with:
-         name: jpo-security-svcs
-         path: /__w/jpo-security-svcs/jpo-security-svcs/jpo-security-svcs/target
-         if-no-files-found: error
+    runs-on: ubuntu-latest
+    container:
+      image: eclipse-temurin:21-jdk-alpine
+      options: --user root
+    steps:
+      - name: Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@v6
+      - name: Install build dependencies
+        run: apk add --no-cache git maven
+      - name: Build and Run Tests
+        run: |
+          cd $GITHUB_WORKSPACE/jpo-security-svcs
+          mvn -e clean verify
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v6
+        with:
+          name: jpo-security-svcs
+          path: jpo-security-svcs/target
+          if-no-files-found: error
+
   mock-signing-svc:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -44,60 +42,54 @@ jobs:
       - name: Build
         run: |
           cd $GITHUB_WORKSPACE/mock-signing-svc
-          ls -ls && pwd
-          ./mvnw -e  clean package
+          ./mvnw -e clean package
+
   tmca-tester:
-   runs-on: ubuntu-latest
-   steps:  
-     - name: Checkout ${{ github.event.repository.name }}
-       uses: actions/checkout@v4
-     - name: build tmca-tester
-       uses: actions/setup-node@v4
-       with:
-         node-version: '18.x'
-     - run: |
-         cd $GITHUB_WORKSPACE/tmca-tester
-         npm install --force
-         node ./tmca-tester.js  
-  sonar:
-    if: github.event.pull_request.base.repo.owner.login == 'usdot-jpo-ode'
-    needs: [jpo-security-svcs, tmca-tester, mock-signing-svc]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+      - name: Set up Node
+        uses: actions/setup-node@v5
         with:
-          fetch-depth: 0   
+          node-version: "18.x"
+      - name: Build
+        run: |
+          cd $GITHUB_WORKSPACE/tmca-tester
+          npm install --force
+          node ./tmca-tester.js
+
+  sonar:
+    needs: [jpo-security-svcs, mock-signing-svc, tmca-tester]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - name: Download code coverage results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: jpo-security-svcs
-          path: home/runner/work/jpo-security-svcs/jpo-security-svcs/target     
-      - name: Find jacoco.xml
-        shell: bash
-        run: |
-          find "$GITHUB_WORKSPACE" -name "jacoco.xml"                
-      - name: Setup SonarScanner
-        uses: warchant/setup-sonar-scanner@v7
+          path: jpo-security-svcs/target
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
         with:
-          version: 5.0.1.3006
-      - name: Generate sonar properties file
+          java-version: "21"
+          distribution: "temurin"
+          cache: maven
+      - name: Run Sonar Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          cat <<EOF > /tmp/sonar-scanner.properties
-          sonar.host.url=https://sonarcloud.io
-          sonar.coverage.jacoco.xmlReportPaths=$GITHUB_WORKSPACE/tmca-tester/target/site/jacoco/jacoco.xml
-          sonar.java.binaries=home/runner/work/jpo-security-svcs/jpo-security-svcs/target
-          sonar.projectBaseDir=$GITHUB_WORKSPACE
-          sonar.projectKey=usdot-jpo-ode_jpo-security-svcs
-          sonar.organization=usdot-jpo-ode
-          jpo-security-svcs.sonar.projectBaseDir  = home/runner/work/jpo-security-svcs/jpo-security-svcs
-          jpo-security-svcs.sonar.sources         = src
-          tmca-tester.sonar.projectBaseDir=$GITHUB_WORKSPACE /tmca-tester
-          tmca-tester.sonar.sources=.
-          EOF
-      - name: Run SonarScanner
-        uses: usdot-fhwa-stol/actions/sonar-scanner@main
-        with:
-          sonar-properties-path: /tmp/sonar-scanner.properties
-          sonar-token: ${{ secrets.SONAR_TOKEN }}
-          working-dir: $GITHUB_WORKSPACE                 
+          cd jpo-security-svcs
+          mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.organization=usdot-jpo-ode \
+            -Dsonar.projectKey=usdot-jpo-ode_jpo-security-svcs \
+            -Dsonar.projectName=jpo-security-svcs \
+            -Dsonar.sources=src/main/java \
+            -Dsonar.tests=src/test/java \
+            -Dsonar.java.binaries=target/classes \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+            -Dsonar.token=$SONAR_TOKEN
